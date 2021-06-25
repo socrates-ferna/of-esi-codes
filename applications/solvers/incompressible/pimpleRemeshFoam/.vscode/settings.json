@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "pimpleFoam.C": "cpp",
+        "mapFields.C": "cpp",
+        "dynamicRefineFvMesh.C": "cpp",
+        "Time.C": "cpp",
+        "mypimpleFoam.C": "cpp",
+        "pimpleRemeshFoam.C": "cpp"
+    }
+}
