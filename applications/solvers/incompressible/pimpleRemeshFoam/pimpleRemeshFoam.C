@@ -84,10 +84,10 @@ Note
 //#include "IOdictionary.H"
 //#include "argList.H"
 
-#include "checkTools.H"
+//#include "checkTools.H"
 //#include "checkTopology.H"
 //#include "checkGeometry.H"
-#include "checkMeshQuality.H"
+//#include "checkMeshQuality.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -111,17 +111,41 @@ int main(int argc, char *argv[])
     #include "createUfIfPresent.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
+/*
+    if (args.found("parallel"))
+    {
+        label n = 0;
+        //label n = Pstream::nProcs(worldComm);
+        Info << "Running on parallel on " << n << "processes"<< endl;
+    }
 
+    if (Pstream::parRun())
+    {
+        Info << "esta forma tb funciona"<< endl;
+    }
+    if (Pstream::master())
+    {
+        Info << "I am the master process"<< endl;
+    }
+*/
     turbulence->validate();
 
     label nFailedChecks = 0;
+
+    bool failedChecks = false;
+
+    scalar maxMeshCo = 1.0;
+
+    scalar meshCoNum = 1.0;
+
+    scalar lastMeshCheck = 0.0;
 
     // --- Read mesh quality criteria
 
     Info<< "\nReading Mesh Quality Controls\n"<< endl;
     autoPtr<IOdictionary> qualDict;
-    autoPtr<surfaceWriter> surfWriter;
-    qualDict.reset
+    //autoPtr<surfaceWriter> surfWriter;
+    /*qualDict.reset
     (
         new IOdictionary
         (
@@ -135,6 +159,7 @@ int main(int argc, char *argv[])
             )
         )
     );
+    */
 
 
 
@@ -147,18 +172,17 @@ int main(int argc, char *argv[])
         #include "readDyMControls.H"   //MIRA ESTO POR SI TE ES ÚTIL
         #include "CourantNo.H"
         #include "setDeltaT.H"
-
+        #include "setMeshDeltaT.H"
         ++runTime;
-
+        lastMeshCheck = lastMeshCheck + runTime.deltaTValue();
         Info<< "Time = " << runTime.timeName() << nl << endl; 
-        Info<< "Current time index is: "<< runTime.timeIndex()<< nl << endl;
+        //Info<< "Current time index is: "<< runTime.timeIndex()<< nl << endl;
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
             if (pimple.firstIter() || moveMeshOuterCorrectors)
             {
                 // Do any mesh changes
-                nFailedChecks=0;
                 mesh.controlledUpdate();
 
                 if (mesh.changing())
@@ -198,12 +222,46 @@ int main(int argc, char *argv[])
                 turbulence->correct();
             }
         }
-        nFailedChecks = checkMeshQuality(mesh, qualDict(), surfWriter);
-        Info<< "\n Failed " << nFailedChecks << " mesh checks. \n"<< endl;
-        Info<< "\nCalling remesh routine.\n"<< endl
+
+        //nFailedChecks = checkMeshQuality(mesh, qualDict(), surfWriter);
+        //mesh check based on 2 conditions:
+        //1. Every 0.1s
+        if (lastMeshCheck > 0.1)
+        {
+            failedChecks = mesh.checkMesh(true);
+            if (failedChecks)
+            {
+                if(Pstream::parRun())
+                {
+                    if(Pstream::master())
+                    {
+                        //call remeshing routine
+                        system("pointwise -b meshUnstructured.glf parameters.dat");
+                
+                        //call mapFields
+                        system("mapFields -case ../aux_case -consistent -sourceTime latestTime .");
+                        //missing angle position for correct remeshing and mapFieldsDict for cuttingPatches
+                    }
+                }
+                //reset failedChecks
+                failedChecks = false;
+            }
+            lastMeshCheck = 0.0;
+        }
+        //determine whether remesh is necesary
+        //build a mapPolyMesh object
+        //remesh
+        //mapFields
+        /*Info<< "\n Failed " << failedChecks << " mesh checks. \n"<< endl;
+        if (failedChecks > 0)
+        {
+            Info<< "\nCalling remesh routine.\n"<< endl;
+            //system("pointwise -b meshUnstructured.glf parameters.dat");
+        }
+        */
         runTime.write();
         //system("mapFields -case ../aux_case -consistent -sourceTime latestTime .");
-        //system("pointwise -b meshUnstructured.glf parameters.dat");
+        
         //system("mapFields -consistent -sourceTime latestTime ../aux_case");
         runTime.printExecutionTime(Info);
     }
