@@ -1,0 +1,4 @@
+pointPatchFields/derived/angularVelocity/angularVelocityPointPatchVectorField.C
+pointPatchFields/derived/angularDisplacement/angularDisplacementPointPatchVectorField.C
+
+LIB = $(FOAM_USER_LIBBIN)/libmyfvMotionSolvers

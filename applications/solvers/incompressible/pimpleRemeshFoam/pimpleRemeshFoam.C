@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
     Info<< "\nReading Mesh Quality Controls\n"<< endl;
     autoPtr<IOdictionary> qualDict;
     //autoPtr<surfaceWriter> surfWriter;
-    /*qualDict.reset
+    qualDict.reset
     (
         new IOdictionary
         (
@@ -159,7 +159,6 @@ int main(int argc, char *argv[])
             )
         )
     );
-    */
 
 
 
