@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../../../../../../opt/OpenFOAM/OpenFOAM-v2012"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"angularDisplacementPointPatchVectorField.C": "cpp",
+			"regIOobject.C": "cpp",
+			"regIOobjectRead.C": "cpp",
+			"messageStream.C": "cpp"
+		}
+	}
+}

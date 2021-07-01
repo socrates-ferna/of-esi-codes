@@ -56,9 +56,11 @@ class angularDisplacementPointPatchVectorField
 
         vector axis_;
         vector origin_;
+        scalar angle=0;
         scalar angle0_;
         scalar amplitude_;
         scalar omega_;
+        label  testlabel=0;
 
         pointField p0_;
 

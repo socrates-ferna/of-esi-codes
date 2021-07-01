@@ -156,14 +156,19 @@ void angularDisplacementPointPatchVectorField::updateCoeffs()
     {
         return;
     }
-
+    ++testlabel;
+    Info<< "el contador vale:"<< testlabel<<endl;
+    //this->write(Info);
     const polyMesh& mesh = this->internalField().mesh()();
     const Time& t = mesh.time();
 
-    scalar angle = angle0_ + omega_*t.value();  //amplitude_*sin(omega_*t.value());
+    // LEE EL DYNAMICMESHDICT IFMODIFIED IOdictionary dMD = mesh.lookupObject<IOdictionary>("dynamicMeshDict");
+    Info<< "angle antes: "<< angle<< endl;
+    //Info<< dMD.lookup("dummyValue")<< endl;
+    angle = angle0_ + omega_*t.value();  //amplitude_*sin(omega_*t.value());
     vector axisHat = axis_/mag(axis_);
     vectorField p0Rel(p0_ - origin_);
-
+    Info<< "angle después"<< angle<< endl;
     vectorField::operator=
     (
         p0Rel*(cos(angle) - 1)
@@ -172,6 +177,8 @@ void angularDisplacementPointPatchVectorField::updateCoeffs()
     );
 
     fixedValuePointPatchField<vector>::updateCoeffs();
+    //Info<< "db access"<< db().names() << endl;
+
 }
 
 
@@ -184,6 +191,7 @@ void angularDisplacementPointPatchVectorField::write
     os.writeEntry("axis", axis_);
     os.writeEntry("origin", origin_);
     os.writeEntry("angle0", angle0_);
+    os.writeEntry("angle", angle);
     os.writeEntry("amplitude", amplitude_);
     os.writeEntry("omega", omega_);
     p0_.writeEntry("p0", os);

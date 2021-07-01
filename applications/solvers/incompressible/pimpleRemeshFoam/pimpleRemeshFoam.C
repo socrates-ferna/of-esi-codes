@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
     // --- Read mesh quality criteria
 
-    Info<< "\nReading Mesh Quality Controls\n"<< endl;
+    Info<< "\nReading Mesh Quality Dict\n"<< endl;
     autoPtr<IOdictionary> qualDict;
     //autoPtr<surfaceWriter> surfWriter;
     qualDict.reset
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
         #include "readDyMControls.H"   //MIRA ESTO POR SI TE ES ÚTIL
         #include "CourantNo.H"
         #include "setDeltaT.H"
-        #include "setMeshDeltaT.H"
+        //#include "setMeshDeltaT.H"
         ++runTime;
         lastMeshCheck = lastMeshCheck + runTime.deltaTValue();
         Info<< "Time = " << runTime.timeName() << nl << endl; 
@@ -221,7 +221,6 @@ int main(int argc, char *argv[])
                 turbulence->correct();
             }
         }
-
         //nFailedChecks = checkMeshQuality(mesh, qualDict(), surfWriter);
         //mesh check based on 2 conditions:
         //1. Every 0.1s
@@ -258,10 +257,25 @@ int main(int argc, char *argv[])
             //system("pointwise -b meshUnstructured.glf parameters.dat");
         }
         */
-        runTime.write();
+        //mesh.readIfModified();
+        //runTime.lookupObject()
+        
         //system("mapFields -case ../aux_case -consistent -sourceTime latestTime .");
         
         //system("mapFields -consistent -sourceTime latestTime ../aux_case");
+        //runTime.readIfModified();
+        //const IOdictionary& dynamicMeshDict = mesh.lookupObject<IOdictionary>("dynamicMeshDict");
+        //Info<< "NAMES "<< mesh.names()<< endl;
+        //Info<< "path: "<< dynamicMeshDict.filePath()<< endl;
+        //Info<< "dynamicMeshDict modified: "<< dynamicMeshDict.modified()<< endl;
+        //static_cast<Foam::IOdictionary>(pdisp).write(Info,true);
+        //word myname = "forceCoeffs";
+        //pdisp.writeData(Info);
+        //functionObjectList runTime.functionObjects(myList);
+        //Info<< myList.get << endl;
+        //bool test = runTime.foundObject<functionObject>(myname);
+        //Info<< test <<endl;
+        runTime.write();
         runTime.printExecutionTime(Info);
     }
 

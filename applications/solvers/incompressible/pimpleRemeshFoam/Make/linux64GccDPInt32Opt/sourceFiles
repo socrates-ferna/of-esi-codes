@@ -1,6 +1,4 @@
 SOURCE = \
 pimpleRemeshFoam.C \
-checkTools.C \
-checkMeshQuality.C \
 
 # sources
