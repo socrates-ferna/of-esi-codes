@@ -1,5 +1,6 @@
 SOURCE = \
 pointPatchFields/derived/angularVelocity/angularVelocityPointPatchVectorField.C \
 pointPatchFields/derived/angularDisplacement/angularDisplacementPointPatchVectorField.C \
+pointPatchFields/derived/PIDAngularDisplacement/PIDangularDisplacementPointPatchVectorField.C \
 
 # sources
