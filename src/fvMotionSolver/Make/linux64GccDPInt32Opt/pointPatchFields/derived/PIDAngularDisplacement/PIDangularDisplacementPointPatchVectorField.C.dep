@@ -449,5 +449,27 @@ $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SHA1Digest.H \
 $(WM_PROJECT_DIR)/src/OSspecific/POSIX/lnInclude/sigWriteNow.H \
 $(WM_PROJECT_DIR)/src/OSspecific/POSIX/lnInclude/sigStopAtWriteNow.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/TimeI.H \
+$(WM_PROJECT_DIR)/src/functionObjects/forces/lnInclude/forces.H \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fvMeshFunctionObject.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/regionFunctionObject.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/stateFunctionObject.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/timeFunctionObject.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/stateFunctionObjectTemplates.C \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/regionFunctionObjectTemplates.C \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/writeFile.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/OFstream.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/fstreamPointer.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/IOmanip.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/writeFileTemplates.C \
+$(WM_PROJECT_DIR)/src/meshTools/lnInclude/cartesianCS.H \
+$(WM_PROJECT_DIR)/src/meshTools/lnInclude/coordinateSystem.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/pointIndList.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/pointList.H \
+$(WM_PROJECT_DIR)/src/meshTools/lnInclude/coordinateRotation.H \
+$(WM_PROJECT_DIR)/src/meshTools/lnInclude/coordinateSystemTemplates.C \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/transform.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/mathematicalConstants.H \
+$(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/volFieldsFwd.H \
+$(WM_PROJECT_DIR)/src/functionObjects/forces/lnInclude/forceCoeffs.H \
 
 #END

@@ -32,6 +32,7 @@ License
 #include "polyMesh.H"
 #include "forces.H"
 #include "forceCoeffs.H"
+#include "error.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -58,7 +59,9 @@ PIDangularDisplacementPointPatchVectorField
     PIDcontrolDict_(this->readControl()),
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
-    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0))
+    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
+    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData"))
 {}
 
 
@@ -79,7 +82,9 @@ PIDangularDisplacementPointPatchVectorField
     PIDcontrolDict_(this->readControl()),
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
-    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0))
+    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
+    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData"))
 {
     if (!dict.found("value"))
     {
@@ -118,7 +123,9 @@ PIDangularDisplacementPointPatchVectorField
     PIDcontrolDict_(this->readControl()),
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
-    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0))
+    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
+    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData"))
 {}
 
 
@@ -139,7 +146,9 @@ PIDangularDisplacementPointPatchVectorField
     PIDcontrolDict_(this->readControl()),
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
-    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0))
+    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
+    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData"))
 {}
 
 
@@ -217,31 +226,56 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldError_ = error_;
         oldErrorIntegral_ = errorIntegral_;
     }
+functionObjects::forces f("forces", mesh, forcesDict_);
+const scalar errorDifferential= oldError_ - error_;
+vector myForce;
+
+
     switch (controlTarget_) {
-        case "forces":
+        case 0:
+            // not implemented yet
+            
+            //functionObjects::forces f("forces", mesh, forcesDict_);
 
-        break
+            f.calcForcesMoment();
 
-        case "forceCoeffs":
+            vector myForce;
+            myForce = f.forceEff();
+            Info<< "totalForce is"<< myForce<<endl;
+            Info<< "dir1 force is"<< myForce[0]<<endl;
 
-        break
+        break;
 
-        case "angle":
+        case 1:
+            // not implemented yet
+            Info<<"notImplemented, omega not modified"<<endl;
+            
+            break;
 
-        break
+        case 2:
+
+            Info<< "angle antes: "<< angle<< endl;
+            //Info<< dMD.lookup("dummyValue")<< endl;
+            //write(Info);
+
+            // PID CONTROL
+            error_ = setPoint - angle;
+
+            errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
+            //const scalar errorDifferential = oldError_ - error_;
+            omega_ = oldOmega_ + P_*error_ + errorIntegral_ + D_*errorDifferential/t.deltaTValue();
+            break;
+
+        default:
+
+            Info<< "Unknown controlled variable"<<endl
+            <<"Allowed variables are:"<< endl<< "(forces forceCoeffs angle)"
+            <<endl<<exit(FatalError);
+
+        break;
     }
-    if (control)
 
-    Info<< "angle antes: "<< angle<< endl;
-    //Info<< dMD.lookup("dummyValue")<< endl;
-    //write(Info);
 
-    // PID CONTROL
-    error_ = setPoint - angle;
-
-    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
-    const scalar errorDifferential = oldError_ - error_;
-    omega_ = oldOmega_ + P_*error_ + errorIntegral_ + D_*errorDifferential/t.deltaTValue();
     // MOVEMENT BASED ON CALCULATED OMEGA
     angle = angle0_ + angle + omega_*t.deltaTValue();
     //auxangle_ = angle0_ + omega_*t.value();  //amplitude_*sin(omega_*t.value());

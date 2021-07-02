@@ -12,5 +12,5 @@ LIB_LIBS = \
     -lfvOptions \
     -lmeshTools \
     -ldynamicMesh \
-    -lfvMotionSolvers
-    /* -lforces include in controlDict if needed */
+    -lfvMotionSolvers \
+    -lforces
