@@ -1,0 +1,85 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      PIDcontrolDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+PIDcontroller
+{
+    type            PID;
+    P               0.01;
+    I               0;
+    D               0;
+
+    /*
+    Suggested tuning method for flap deflection control for target lift is:
+    1. Assume linear effect at low deflection on lift
+    2. Tune parameters with ZN method using moveDynamicMesh -noFunctionObjects 
+        (very cheap compared to full turbulent runs)
+    3. With the setup, try control on full pimpleRemeshFoam
+    */
+
+    controlDelay    0;  // delay in seconds before control is turned on
+
+    actuatorModel    linear;   // not implemented
+    actuatorModelCoeffs
+    {
+        var1            5;
+        var2            12;
+        var3            3.5;
+    }
+
+    controlTarget   forces;    // ideally several control options: angle, force, forceCoeff, moment, momentCoeff, other
+    direction       0;        // still very simple implementation
+
+    controlledVarData         // data we need to calculate force, forceCoeff or whatever
+    {
+        type        forces;
+        libs        (forces);
+
+        patches     (airfoil); // careful!! Might not be the same patch as the rotated patch
+        rho         rhoInf;
+        rhoInf      1;
+        CofR        (0.25 0 0); // careful!! Might not be the same CofR as the rotated patch's
+
+    }
+    /*
+    forceCoeffs
+    {
+    type            forceCoeffs;
+
+    libs            (forces);
+
+    writeControl    timeStep;
+    timeInterval    1;
+
+    log             yes;
+
+    patches         (airfoil);
+    rho             rhoInf;
+    rhoInf          1;
+    liftDir         (0 1 0);
+    dragDir         (1 0 0);
+    CofR            (0.25 0 0);
+    pitchAxis       (0 0 1);
+    magUInf         1.0;
+    lRef            1.0;
+    Aref            1;
+    }
+    */
+
+}
+
+
+// ************************************************************************* //

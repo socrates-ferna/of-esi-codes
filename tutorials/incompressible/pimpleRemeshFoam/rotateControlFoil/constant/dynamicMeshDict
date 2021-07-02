@@ -1,0 +1,70 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | foam-extend: Open Source CFD                    |
+|  \\    /   O peration     | Version:     4.1                                |
+|   \\  /    A nd           | Web:         http://www.foam-extend.org         |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      dynamicMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dynamicFvMesh      dynamicMotionSolverFvMesh;
+//dynamicFvMesh 	   dynamicMotionSolverListFvMesh
+
+motionSolverLibs ("libmyfvMotionSolvers.so");
+
+solver            displacementLaplacian;
+//solver            velocityLaplacian;
+dummyValue    4652;
+/*
+displacementComponentLaplacian
+displacementInterpolation
+displacementLaplacian
+displacementLayeredMotion
+displacementLinearMotion
+displacementSBRStress
+multiSolidBodyMotionSolver
+solidBody
+velocityComponentLaplacian
+velocityLaplacian
+*/
+	
+
+displacementLaplacianCoeffs 
+{
+    diffusivity         inverseDistance (airfoil);			//s1
+    //diffusivity       inverseVolume (airfoil);			//s2
+    //diffusivity       quadratic inverseDistance (airfoil);		//s3
+    //diffusivity       exponential 0.6 inverseDistance (airfoil);	//s4
+    //diffusivity       uniform (airfoil);				//s5
+    //diffusivity       directional (1 0 0) (airfoil);			//s6
+
+/*
+directional
+exponential
+file
+inverseDistance
+inverseFaceDistance
+inversePointDistance
+inverseVolume
+motionDirectional
+quadratic
+uniform
+*/
+}
+
+velocityLaplacianCoeffs 
+{
+    diffusivity         inverseDistance (airfoil);			
+}
+
+//solver            displacementSBRStress;
+//diffusivity       inverseDistance (airfoil);		
+
+// ************************************************************************* //

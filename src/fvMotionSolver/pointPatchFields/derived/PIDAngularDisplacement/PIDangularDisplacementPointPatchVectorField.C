@@ -30,6 +30,8 @@ License
 #include "addToRunTimeSelectionTable.H"
 #include "Time.H"
 #include "polyMesh.H"
+#include "forces.H"
+#include "forceCoeffs.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -210,15 +212,26 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
     if (timeIndex_!= t.timeIndex())
     {
-        timeIndex = t.timeIndex();
+        timeIndex_ = t.timeIndex();
         oldOmega_= omega_;
         oldError_ = error_;
         oldErrorIntegral_ = errorIntegral_;
     }
+    switch (controlTarget_) {
+        case "forces":
 
-    
+        break
 
-    // LEE EL DYNAMICMESHDICT IFMODIFIED IOdictionary dMD = mesh.lookupObject<IOdictionary>("dynamicMeshDict");
+        case "forceCoeffs":
+
+        break
+
+        case "angle":
+
+        break
+    }
+    if (control)
+
     Info<< "angle antes: "<< angle<< endl;
     //Info<< dMD.lookup("dummyValue")<< endl;
     //write(Info);
@@ -226,7 +239,9 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
     // PID CONTROL
     error_ = setPoint - angle;
 
-
+    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
+    const scalar errorDifferential = oldError_ - error_;
+    omega_ = oldOmega_ + P_*error_ + errorIntegral_ + D_*errorDifferential/t.deltaTValue();
     // MOVEMENT BASED ON CALCULATED OMEGA
     angle = angle0_ + angle + omega_*t.deltaTValue();
     //auxangle_ = angle0_ + omega_*t.value();  //amplitude_*sin(omega_*t.value());
@@ -280,7 +295,7 @@ IOdictionary PIDangularDisplacementPointPatchVectorField::readControl()
         )
     );
     
-    Info<< "READCONTROLS FUNCTION PIDCONTROLDICT:"<< endl<< readdict.tokens() << endl;
+    Info<< "READCONTROLS FUNCTION PIDCONTROLDICT:"<< endl<< readdict.dictName() << endl;
     return readdict;
 }
 
@@ -289,7 +304,10 @@ void PIDangularDisplacementPointPatchVectorField::report
     Ostream& os
 ) const
 {
+    os.writeEntry("oldOmega", oldOmega_);
     os.writeEntry("omega", omega_);
+    os.writeEntry("error", error_);
+    os.writeEntry("errorIntegral", errorIntegral_);
     //os.writeEntry("auxangle", auxangle_);
     os.writeEntry("angle", angle);
     return;

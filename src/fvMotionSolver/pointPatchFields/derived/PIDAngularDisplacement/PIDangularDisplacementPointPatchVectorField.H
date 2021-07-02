@@ -69,10 +69,10 @@ class PIDangularDisplacementPointPatchVectorField
         scalar D_;
 
         // needed vars
-        scalar error_;
-        scalar errorIntegral_;
-        scalar oldError_;
-        scalar oldErrorIntegral_;
+        scalar error_=0;
+        scalar errorIntegral_=0;
+        scalar oldError_=0;
+        scalar oldErrorIntegral_=0;
         scalar oldOmega_=0.0;
         label  timeIndex_=0;
         scalar auxangle_=0;
