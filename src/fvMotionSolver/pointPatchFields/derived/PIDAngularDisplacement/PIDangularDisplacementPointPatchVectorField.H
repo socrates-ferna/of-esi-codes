@@ -74,14 +74,16 @@ class PIDangularDisplacementPointPatchVectorField
         scalar oldError_=0;
         scalar oldErrorIntegral_=0;
         scalar oldOmega_=0.0;
+        scalar errorDifferential_=0.0;
         label  timeIndex_=0;
         scalar auxangle_=0;
         scalar angle=0;
-        scalar setPoint=0.35;
 
         int controlTarget_;
         wordList patches_;
         dictionary forcesDict_;
+        scalar setPoint_=-0.35;
+
         //bool built_=false;
 
 

@@ -30,7 +30,7 @@ boundaryField
         origin          ( 0.25 0 0 );
         angle0          0;
         amplitude       #calc "5*constant::mathematical::pi/180";  // unnecesary
-        omega           2;
+        omega           0;
         value           uniform ( 0 0 0 );
 
         /*

@@ -61,7 +61,8 @@ PIDangularDisplacementPointPatchVectorField
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
-    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData"))
+    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
+    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35))
 {}
 
 
@@ -84,7 +85,8 @@ PIDangularDisplacementPointPatchVectorField
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
-    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData"))
+    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
+    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35))
 {
     if (!dict.found("value"))
     {
@@ -125,7 +127,8 @@ PIDangularDisplacementPointPatchVectorField
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
-    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData"))
+    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
+    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35))
 {}
 
 
@@ -148,7 +151,8 @@ PIDangularDisplacementPointPatchVectorField
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
-    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData"))
+    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
+    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35))
 {}
 
 
@@ -186,35 +190,6 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
     {
         return;
     }
-    /*
-    if (!built_)
-    {
-        IOdictionary PIDcontrolDict_
-        (
-            IOobject
-            (
-                "PIDcontrolDict",
-                this->internalField().mesh().time().system(),
-                this->internalField().mesh()(),
-                IOobject::MUST_READ_IF_MODIFIED,
-                IOobject::AUTO_WRITE
-            )
-        );
-        built_=true;
-        
-        Info<< "READ PIDCONTROLDICT:"<< endl<< PIDcontrolDict_.tokens() << endl;
-
-        readControl();
-
-    }
-    */
-
-   //Info<< "P: "<< PIDcontrolDict_.subDict("PIDcontroller").lookup("P")<< endl;
-   //Info<< "mesh inside PointPatch, ObjectRegistry: "<< endl<< mesh.names()<< endl;
-
-    //++testlabel;
-    //Info<< "el contador vale:"<< testlabel<<endl;
-    //this->write(Info);
 
     const polyMesh& mesh = this->internalField().mesh()();
     const Time& t = mesh.time();
@@ -226,9 +201,13 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldError_ = error_;
         oldErrorIntegral_ = errorIntegral_;
     }
-functionObjects::forces f("forces", mesh, forcesDict_);
-const scalar errorDifferential= oldError_ - error_;
-vector myForce;
+
+
+    functionObjects::forces f("forces", mesh, forcesDict_);
+//    const scalar errorDifferential= oldError_ - error_;
+    Vector<float> myForce;  // vector before. Vector is OF class
+
+    //functionObjects::forceCoeffs fc("forceCoeffs",mesh,forcesDict_,true);
 
 
     switch (controlTarget_) {
@@ -239,16 +218,27 @@ vector myForce;
 
             f.calcForcesMoment();
 
-            vector myForce;
             myForce = f.forceEff();
-            Info<< "totalForce is"<< myForce<<endl;
-            Info<< "dir1 force is"<< myForce[0]<<endl;
+
+            error_ = setPoint_ - myForce.x(); // this should choose x,y,z according to direction
+
+            errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
+            errorDifferential_ = oldError_ - error_;
+            //const scalar errorDifferential = oldError_ - error_;
+            omega_ = oldOmega_ + P_*error_ + errorIntegral_ + D_*errorDifferential_/t.deltaTValue();
+
+
+            Info<< "totalForce is: "<< myForce<<endl;
+            Info<< "dir1 force is: "<< myForce.x() <<endl;
+            Info<< "target force is: "<< setPoint_ <<endl;
 
         break;
 
-        case 1:
+        case 1:  // PUEDO ACCEDER AL OBJETO YA CREADO POR PIMPLE?
             // not implemented yet
             Info<<"notImplemented, omega not modified"<<endl;
+
+            
             
             break;
 
@@ -259,11 +249,12 @@ vector myForce;
             //write(Info);
 
             // PID CONTROL
-            error_ = setPoint - angle;
+            error_ = setPoint_ - angle;
 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
             //const scalar errorDifferential = oldError_ - error_;
-            omega_ = oldOmega_ + P_*error_ + errorIntegral_ + D_*errorDifferential/t.deltaTValue();
+            errorDifferential_ = oldError_ - error_;
+            omega_ = oldOmega_ + P_*error_ + errorIntegral_ + D_*errorDifferential_/t.deltaTValue();
             break;
 
         default:
@@ -273,6 +264,8 @@ vector myForce;
             <<endl<<exit(FatalError);
 
         break;
+
+        // EXTERNAL CONTROL WILL BE DONE IN ANOTHER pointPatchFields option
     }
 
 
