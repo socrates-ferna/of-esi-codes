@@ -84,6 +84,8 @@ class PIDangularDisplacementPointPatchVectorField
         dictionary forcesDict_;
         scalar setPoint_=-0.35;
 
+        //functionObjects::forceCoeffs fc;
+
         //bool built_=false;
 
 

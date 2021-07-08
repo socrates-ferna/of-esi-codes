@@ -32,7 +32,6 @@ License
 #include "polyMesh.H"
 #include "forces.H"
 #include "forceCoeffs.H"
-#include "error.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -202,24 +201,29 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldErrorIntegral_ = errorIntegral_;
     }
 
-
-    functionObjects::forces f("forces", mesh, forcesDict_);
-//    const scalar errorDifferential= oldError_ - error_;
+    functionObjects::forces f("forces",t,forcesDict_,true);
     Vector<float> myForce;  // vector before. Vector is OF class
+    /*if (controlTarget_ == 0 || controlTarget_ == 1)
+    {
+        Info<<"   ";
+        functionObjects::forceCoeffs fc("forceCoeffs",t,forcesDict_,true);
+    }*/
 
-    //functionObjects::forceCoeffs fc("forceCoeffs",mesh,forcesDict_,true);
+    /*
+    functionObjects::forceCoeffs fc = 
+    functionObjects::forceCoeffs ("forceCoeffs",t,forcesDict_,true);
+    */
 
+   functionObjects::forceCoeffs fc("forceCoeffs",t,forcesDict_,true);
 
     switch (controlTarget_) {
         case 0:
             // not implemented yet
             
             //functionObjects::forces f("forces", mesh, forcesDict_);
-
             f.calcForcesMoment();
 
             myForce = f.forceEff();
-
             error_ = setPoint_ - myForce.x(); // this should choose x,y,z according to direction
 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
@@ -230,16 +234,42 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
             Info<< "totalForce is: "<< myForce<<endl;
             Info<< "dir1 force is: "<< myForce.x() <<endl;
+            Info<< "comp0 force is: "<< myForce.component(0) <<endl;
+            Info<< "comp1 force is: "<< myForce.component(1) <<endl;
+            Info<< "comp2 force is: "<< myForce.component(2) <<endl;
             Info<< "target force is: "<< setPoint_ <<endl;
+            //Info<< "e1:"<< f.coordSys_.e1()<<endl; NO VALE PORQUE SON PRIVADAS
+            //Info<< "e2:"<< f.coordSys_.e2()<<endl;
+            //Info<< "e3:"<< f.coordSys_.e3()<<endl;
 
         break;
 
         case 1:  // PUEDO ACCEDER AL OBJETO YA CREADO POR PIMPLE?
             // not implemented yet
-            Info<<"notImplemented, omega not modified"<<endl;
 
+            // IMPLEMENT YOUR OWN FORCECOEFFS OR SIMPLY CALL EXECUTE?
+            Info<<"forceCoeffs"<<endl;
+            fc.calcForcesMoment();
+            myForce = fc.forceEff();
+            fc.execute();
+            Info<< "COEFStotalForce is: "<< myForce<<endl;
+            Info<< "COEFSdir1 force is: "<< myForce.x() <<endl;
+            Info<< "target force is: "<< setPoint_ <<endl;
+            /*
+            f.calcForcesMoment();
             
-            
+            List<Field<scalar>> liftCoeffs(3);
+            scalar ClTot = 0;
+
+            const scalar pDyn = f.rhoRef_*sqr(f.maUInf_); // this won't work, private data members
+
+            const scalar forceScaling = 1.0/(Aref_*pDyn + SMALL);
+
+            forAll(liftCoeffs, i)
+            {
+                const Field<vector> localForce(f.coordSys_.localVector(myForce[i]));
+            }
+            */
             break;
 
         case 2:
