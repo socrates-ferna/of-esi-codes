@@ -26,7 +26,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "forces.H"
+#include "lforces.H"
 #include "fvcGrad.H"
 #include "porosityModel.H"
 #include "turbulentTransportModel.H"
@@ -40,21 +40,21 @@ namespace Foam
 {
 namespace functionObjects
 {
-    defineTypeNameAndDebug(forces, 0);
-    addToRunTimeSelectionTable(functionObject, forces, dictionary);
+    defineTypeNameAndDebug(lforces, 0);
+    addToRunTimeSelectionTable(functionObject, lforces, dictionary);
 }
 }
 
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
-Foam::word Foam::functionObjects::forces::fieldName(const word& name) const
+Foam::word Foam::functionObjects::lforces::fieldName(const word& name) const
 {
     return this->name() + ":" + name;
 }
 
 
-void Foam::functionObjects::forces::createFiles()
+void Foam::functionObjects::lforces::createFiles()
 {
     // Note: Only possible to create bin files after bins have been initialised
 
@@ -76,7 +76,7 @@ void Foam::functionObjects::forces::createFiles()
 }
 
 
-void Foam::functionObjects::forces::writeIntegratedHeader
+void Foam::functionObjects::lforces::writeIntegratedHeader
 (
     const word& header,
     Ostream& os
@@ -99,7 +99,7 @@ void Foam::functionObjects::forces::writeIntegratedHeader
 }
 
 
-void Foam::functionObjects::forces::writeBinHeader
+void Foam::functionObjects::lforces::writeBinHeader
 (
     const word& header,
     Ostream& os
@@ -155,7 +155,7 @@ void Foam::functionObjects::forces::writeBinHeader
 }
 
 
-void Foam::functionObjects::forces::setCoordinateSystem
+void Foam::functionObjects::lforces::setCoordinateSystem
 (
     const dictionary& dict,
     const word& e3Name,
@@ -199,7 +199,7 @@ void Foam::functionObjects::forces::setCoordinateSystem
 }
 
 
-void Foam::functionObjects::forces::initialise()
+void Foam::functionObjects::lforces::initialise()
 {
     if (initialised_)
     {
@@ -244,7 +244,7 @@ void Foam::functionObjects::forces::initialise()
 }
 
 
-void Foam::functionObjects::forces::initialiseBins()
+void Foam::functionObjects::lforces::initialiseBins()
 {
     if (nBin_ > 1)
     {
@@ -310,7 +310,7 @@ void Foam::functionObjects::forces::initialiseBins()
         }
     }
 
-    // Allocate storage for forces and moments
+    // Allocate storage for lforces and moments
     forAll(force_, i)
     {
         force_[i].setSize(nBin_, vector::zero);
@@ -319,7 +319,7 @@ void Foam::functionObjects::forces::initialiseBins()
 }
 
 
-void Foam::functionObjects::forces::resetFields()
+void Foam::functionObjects::lforces::resetFields()
 {
     force_[0] = Zero;
     force_[1] = Zero;
@@ -345,7 +345,7 @@ void Foam::functionObjects::forces::resetFields()
 
 
 Foam::tmp<Foam::volSymmTensorField>
-Foam::functionObjects::forces::devRhoReff() const
+Foam::functionObjects::lforces::devRhoReff() const
 {
     typedef compressible::turbulenceModel cmpTurbModel;
     typedef incompressible::turbulenceModel icoTurbModel;
@@ -404,7 +404,7 @@ Foam::functionObjects::forces::devRhoReff() const
 }
 
 
-Foam::tmp<Foam::volScalarField> Foam::functionObjects::forces::mu() const
+Foam::tmp<Foam::volScalarField> Foam::functionObjects::lforces::mu() const
 {
     if (foundObject<fluidThermo>(basicThermo::dictName))
     {
@@ -440,7 +440,7 @@ Foam::tmp<Foam::volScalarField> Foam::functionObjects::forces::mu() const
 }
 
 
-Foam::tmp<Foam::volScalarField> Foam::functionObjects::forces::rho() const
+Foam::tmp<Foam::volScalarField> Foam::functionObjects::lforces::rho() const
 {
     if (rhoName_ == "rhoInf")
     {
@@ -461,7 +461,7 @@ Foam::tmp<Foam::volScalarField> Foam::functionObjects::forces::rho() const
 }
 
 
-Foam::scalar Foam::functionObjects::forces::rho(const volScalarField& p) const
+Foam::scalar Foam::functionObjects::lforces::rho(const volScalarField& p) const
 {
     if (p.dimensions() == dimPressure)
     {
@@ -479,7 +479,7 @@ Foam::scalar Foam::functionObjects::forces::rho(const volScalarField& p) const
 }
 
 
-void Foam::functionObjects::forces::applyBins
+void Foam::functionObjects::lforces::applyBins
 (
     const vectorField& Md,
     const vectorField& fN,
@@ -516,7 +516,7 @@ void Foam::functionObjects::forces::applyBins
 }
 
 
-void Foam::functionObjects::forces::addToFields
+void Foam::functionObjects::lforces::addToFields
 (
     const label patchi,
     const vectorField& Md,
@@ -540,7 +540,7 @@ void Foam::functionObjects::forces::addToFields
 }
 
 
-void Foam::functionObjects::forces::addToFields
+void Foam::functionObjects::lforces::addToFields
 (
     const labelList& cellIDs,
     const vectorField& Md,
@@ -566,7 +566,7 @@ void Foam::functionObjects::forces::addToFields
 }
 
 
-void Foam::functionObjects::forces::writeIntegratedForceMoment
+void Foam::functionObjects::lforces::writeIntegratedForceMoment
 (
     const string& descriptor,
     const vectorField& fm0,
@@ -610,13 +610,13 @@ void Foam::functionObjects::forces::writeIntegratedForceMoment
 }
 
 
-void Foam::functionObjects::forces::writeForces()
+void Foam::functionObjects::lforces::writeForces()
 {
     Log << type() << " " << name() << " write:" << nl;
 
     writeIntegratedForceMoment
     (
-        "forces",
+        "lforces",
         coordSys_.localVector(force_[0]),
         coordSys_.localVector(force_[1]),
         coordSys_.localVector(force_[2]),
@@ -636,7 +636,7 @@ void Foam::functionObjects::forces::writeForces()
 }
 
 
-void Foam::functionObjects::forces::writeBinnedForceMoment
+void Foam::functionObjects::lforces::writeBinnedForceMoment
 (
     const List<Field<vector>>& fm,
     autoPtr<OFstream>& osPtr
@@ -681,7 +681,7 @@ void Foam::functionObjects::forces::writeBinnedForceMoment
 }
 
 
-void Foam::functionObjects::forces::writeBins()
+void Foam::functionObjects::lforces::writeBins()
 {
     List<Field<vector>> lf(3);
     List<Field<vector>> lm(3);
@@ -699,7 +699,7 @@ void Foam::functionObjects::forces::writeBins()
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::functionObjects::forces::forces
+Foam::functionObjects::lforces::lforces
 (
     const word& name,
     const Time& runTime,
@@ -738,13 +738,20 @@ Foam::functionObjects::forces::forces
     if (readFields)
     {
         read(dict);
-        setCoordinateSystem(dict);
+        if(dict.found("liftDir") && dict.found("dragDir") && dict.found("CofR"))
+        {
+            setCoordinateSystem(dict,"liftDir","dragDir");
+        }
+        else
+        {
+            setCoordinateSystem(dict);
+        }
         Log << endl;
     }
 }
 
 
-Foam::functionObjects::forces::forces
+Foam::functionObjects::lforces::lforces
 (
     const word& name,
     const objectRegistry& obr,
@@ -783,7 +790,14 @@ Foam::functionObjects::forces::forces
     if (readFields)
     {
         read(dict);
-        setCoordinateSystem(dict);
+        if(dict.found("liftDir") && dict.found("dragDir") && dict.found("CofR"))
+        {
+            setCoordinateSystem(dict,"liftDir","dragDir");
+        }
+        else
+        {
+            setCoordinateSystem(dict);
+        }
         Log << endl;
     }
 
@@ -802,7 +816,7 @@ Foam::functionObjects::forces::forces
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-bool Foam::functionObjects::forces::read(const dictionary& dict)
+bool Foam::functionObjects::lforces::read(const dictionary& dict)
 {
     fvMeshFunctionObject::read(dict);
     writeFile::read(dict);
@@ -954,7 +968,7 @@ bool Foam::functionObjects::forces::read(const dictionary& dict)
 }
 
 
-void Foam::functionObjects::forces::calcForcesMoment()
+void Foam::functionObjects::lforces::calcForcesMoment()
 {
     initialise();
 
@@ -1080,19 +1094,26 @@ void Foam::functionObjects::forces::calcForcesMoment()
 }
 
 
-Foam::vector Foam::functionObjects::forces::forceEff() const
+Foam::vector Foam::functionObjects::lforces::forceEff() const
 {
-    return sum(force_[0]) + sum(force_[1]) + sum(force_[2]);
+    List<Field<vector>> localForce(3);
+    forAll(force_,i)
+    {
+        localForce[i].setSize(nBin_);
+        //const List<Field<vector>> localForce(coordSys_.localVector(force_[i]));
+        localForce[i] = coordSys_.localVector(force_[i]);
+    }
+    return sum(localForce[0]) + sum(localForce[1]) + sum(localForce[2]);
 }
 
 
-Foam::vector Foam::functionObjects::forces::momentEff() const
+Foam::vector Foam::functionObjects::lforces::momentEff() const
 {
     return sum(moment_[0]) + sum(moment_[1]) + sum(moment_[2]);
 }
 
 
-bool Foam::functionObjects::forces::execute()
+bool Foam::functionObjects::lforces::execute()
 {
     calcForcesMoment();
 
@@ -1120,7 +1141,7 @@ bool Foam::functionObjects::forces::execute()
 }
 
 
-bool Foam::functionObjects::forces::write()
+bool Foam::functionObjects::lforces::write()
 {
     if (writeFields_)
     {

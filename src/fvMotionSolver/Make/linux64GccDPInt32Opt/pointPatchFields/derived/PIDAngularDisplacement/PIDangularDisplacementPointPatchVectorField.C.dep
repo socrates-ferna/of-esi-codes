@@ -449,7 +449,7 @@ $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SHA1Digest.H \
 $(WM_PROJECT_DIR)/src/OSspecific/POSIX/lnInclude/sigWriteNow.H \
 $(WM_PROJECT_DIR)/src/OSspecific/POSIX/lnInclude/sigStopAtWriteNow.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/TimeI.H \
-$(WM_PROJECT_DIR)/src/functionObjects/forces/lnInclude/forces.H \
+/home/s319791/OpenFOAM/s319791-v2012/src/functionObjects/lforces/lnInclude/lforces.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/fvMeshFunctionObject.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/regionFunctionObject.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/stateFunctionObject.H \
@@ -470,6 +470,6 @@ $(WM_PROJECT_DIR)/src/meshTools/lnInclude/coordinateSystemTemplates.C \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/transform.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/mathematicalConstants.H \
 $(WM_PROJECT_DIR)/src/finiteVolume/lnInclude/volFieldsFwd.H \
-$(WM_PROJECT_DIR)/src/functionObjects/forces/lnInclude/forceCoeffs.H \
+/home/s319791/OpenFOAM/s319791-v2012/src/functionObjects/lforces/lnInclude/lforceCoeffs.H \
 
 #END

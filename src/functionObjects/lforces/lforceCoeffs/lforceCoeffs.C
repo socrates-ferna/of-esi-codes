@@ -26,7 +26,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "forceCoeffs.H"
+#include "lforceCoeffs.H"
 #include "dictionary.H"
 #include "Time.H"
 #include "Pstream.H"
@@ -42,15 +42,15 @@ namespace Foam
 {
 namespace functionObjects
 {
-    defineTypeNameAndDebug(forceCoeffs, 0);
-    addToRunTimeSelectionTable(functionObject, forceCoeffs, dictionary);
+    defineTypeNameAndDebug(lforceCoeffs, 0);
+    addToRunTimeSelectionTable(functionObject, lforceCoeffs, dictionary);
 }
 }
 
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
-void Foam::functionObjects::forceCoeffs::createFiles()
+void Foam::functionObjects::lforceCoeffs::createFiles()
 {
     // Note: Only possible to create bin files after bins have been initialised
 
@@ -83,7 +83,7 @@ void Foam::functionObjects::forceCoeffs::createFiles()
 }
 
 
-void Foam::functionObjects::forceCoeffs::writeIntegratedHeader
+void Foam::functionObjects::lforceCoeffs::writeIntegratedHeader
 (
     const word& header,
     Ostream& os
@@ -118,7 +118,7 @@ void Foam::functionObjects::forceCoeffs::writeIntegratedHeader
 }
 
 
-void Foam::functionObjects::forceCoeffs::writeBinHeader
+void Foam::functionObjects::lforceCoeffs::writeBinHeader
 (
     const word& header,
     Ostream& os
@@ -173,7 +173,7 @@ void Foam::functionObjects::forceCoeffs::writeBinHeader
 }
 
 
-void Foam::functionObjects::forceCoeffs::writeIntegratedData
+void Foam::functionObjects::lforceCoeffs::writeIntegratedData
 (
     const word& title,
     const List<Field<scalar>>& coeff
@@ -203,7 +203,7 @@ void Foam::functionObjects::forceCoeffs::writeIntegratedData
 }
 
 
-void Foam::functionObjects::forceCoeffs::writeBinData
+void Foam::functionObjects::lforceCoeffs::writeBinData
 (
     const List<Field<scalar>> coeffs,
     Ostream& os
@@ -229,7 +229,7 @@ void Foam::functionObjects::forceCoeffs::writeBinData
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::functionObjects::forceCoeffs::forceCoeffs
+Foam::functionObjects::lforceCoeffs::lforceCoeffs
 (
     const word& name,
     const Time& runTime,
@@ -237,7 +237,7 @@ Foam::functionObjects::forceCoeffs::forceCoeffs
     const bool readFields
 )
 :
-    forces(name, runTime, dict, false),
+    lforces(name, runTime, dict, false),
     magUInf_(Zero),
     lRef_(Zero),
     Aref_(Zero),
@@ -260,9 +260,9 @@ Foam::functionObjects::forceCoeffs::forceCoeffs
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
-bool Foam::functionObjects::forceCoeffs::read(const dictionary& dict)
+bool Foam::functionObjects::lforceCoeffs::read(const dictionary& dict)
 {
-    forces::read(dict);
+    lforces::read(dict);
 
     // Free stream velocity magnitude
     dict.readEntry("magUInf", magUInf_);
@@ -324,9 +324,11 @@ bool Foam::functionObjects::forceCoeffs::read(const dictionary& dict)
 }
 
 
-bool Foam::functionObjects::forceCoeffs::execute()
+bool Foam::functionObjects::lforceCoeffs::execute()
 {
-    forces::calcForcesMoment();
+    lforces::calcForcesMoment();
+
+    Info<< "USING LFORCECOEFFS"<<endl;
 
     createFiles();
 
@@ -489,7 +491,7 @@ bool Foam::functionObjects::forceCoeffs::execute()
 }
 
 
-bool Foam::functionObjects::forceCoeffs::write()
+bool Foam::functionObjects::lforceCoeffs::write()
 {
     if (writeFields_)
     {

@@ -25,14 +25,14 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::functionObjects::forces
+    Foam::functionObjects::lforces
 
 Group
     grpForcesFunctionObjects
 
 Description
-    Calculates the forces and moments by integrating the pressure and
-    skin-friction forces over a given list of patches, and the resistance
+    Calculates the lforces and moments by integrating the pressure and
+    skin-friction lforces over a given list of patches, and the resistance
     from porous zones.
 
     Forces and moments are calculated in a global Cartesian coordinate system
@@ -42,7 +42,7 @@ Description
 
     Results are written to multiple files as a function of time in the
     postProcessing/\<functionObjectName\> directory:
-    - force.dat          : forces
+    - force.dat          : lforces
     - moment.dat         : moments
     - forceBin.dat       : force bins
     - momentBin.dat      : moment bins
@@ -50,10 +50,10 @@ Description
 Usage
     Example of function object specification:
     \verbatim
-    forces1
+    lforces1
     {
-        type        forces;
-        libs        (forces);
+        type        lforces;
+        libs        (lforces);
         ...
         log         yes;
         writeFields yes;
@@ -71,10 +71,10 @@ Usage
     Where the entries comprise:
     \table
         Property     | Description             | Required    | Default value
-        type         | Type name: forces       | yes         |
+        type         | Type name: lforces       | yes         |
         log          | Write force data to standard output | no | no
         writeFields  | Write the force and moment fields | no | no
-        patches      | Patches included in the forces calculation | yes |
+        patches      | Patches included in the lforces calculation | yes |
         p            | Pressure field name     | no          | p
         U            | Velocity field name     | no          | U
         rho          | Density field name (see below) | no   | rho
@@ -132,12 +132,12 @@ See also
     Foam::functionObjects::timeControl
 
 SourceFiles
-    forces.C
+    lforces.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef functionObjects_forces_H
-#define functionObjects_forces_H
+#ifndef functionObjects_lforces_H
+#define functionObjects_lforces_H
 
 #include "fvMeshFunctionObject.H"
 #include "writeFile.H"
@@ -156,10 +156,10 @@ namespace functionObjects
 {
 
 /*---------------------------------------------------------------------------*\
-                           Class forces Declaration
+                           Class lforces Declaration
 \*---------------------------------------------------------------------------*/
 
-class forces
+class lforces
 :
     public fvMeshFunctionObject,
     public writeFile
@@ -192,7 +192,7 @@ protected:
 
         // Read from dictionary
 
-            //- Patches to integrate forces over
+            //- Patches to integrate lforces over
             labelHashSet patchSet_;
 
             //- Name of pressure field
@@ -216,7 +216,7 @@ protected:
             //- Reference pressure
             scalar pRef_;
 
-            //- Coordinate system used when evaluating forces/moments
+            //- Coordinate system used when evaluating lforces/moments
             coordSystem::cartesian coordSys_;
 
             //- Flag to include porosity effects
@@ -328,7 +328,7 @@ protected:
             const vectorField& fP
         );
 
-        //- Helper function to write integrated forces and moments
+        //- Helper function to write integrated lforces and moments
         void writeIntegratedForceMoment
         (
             const string& descriptor,
@@ -341,7 +341,7 @@ protected:
         //- Write force data
         void writeForces();
 
-        //- Helper function to write binned forces and moments
+        //- Helper function to write binned lforces and moments
         void writeBinnedForceMoment
         (
             const List<Field<vector>>& fm,
@@ -352,22 +352,22 @@ protected:
         void writeBins();
 
         //- No copy construct
-        forces(const forces&) = delete;
+        lforces(const lforces&) = delete;
 
         //- No copy assignment
-        void operator=(const forces&) = delete;
+        void operator=(const lforces&) = delete;
 
 
 public:
 
     //- Runtime type information
-    TypeName("forces");
+    TypeName("lforces");
 
 
     // Constructors
 
         //- Construct from Time and dictionary
-        forces
+        lforces
         (
             const word& name,
             const Time& runTime,
@@ -376,7 +376,7 @@ public:
         );
 
         //- Construct from objectRegistry and dictionary
-        forces
+        lforces
         (
             const word& name,
             const objectRegistry& obr,
@@ -386,15 +386,15 @@ public:
 
 
     //- Destructor
-    virtual ~forces() = default;
+    virtual ~lforces() = default;
 
 
     // Member Functions
 
-        //- Read the forces data
+        //- Read the lforces data
         virtual bool read(const dictionary&);
 
-        //- Calculate the forces and moments
+        //- Calculate the lforces and moments
         virtual void calcForcesMoment();
 
         //- Return the total force
@@ -406,7 +406,7 @@ public:
         //- Execute, currently does nothing
         virtual bool execute();
 
-        //- Write the forces
+        //- Write the lforces
         virtual bool write();
 };
 

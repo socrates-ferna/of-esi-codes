@@ -40,23 +40,23 @@ PIDcontroller
         var3            3.5;
     }
 
-    controlTarget   1;    // ideally several control options: angle(2), force(0), forceCoeff(1), moment, momentCoeff, other
+    controlTarget   0;    // ideally several control options: angle(2), force(0), forceCoeff(1), moment, momentCoeff, other
 
     controlledVarData         // data we need to calculate force, forceCoeff or whatever
     {
-        type        forceCoeffs;
-        libs        (forces);
+        type        lforces;
+        libs        (lforces);
 
         patches     (airfoil); // careful!! Might not be the same patch as the rotated patch
         rho         rhoInf;
         rhoInf      1;
         CofR        (0.25 0 0); // careful!! Might not be the same CofR as the rotated patch's
-    liftDir         (-0.5 0.5 0);
-	    e3		    (-0.5 0.5 0);
-    dragDir         (0.5 0.5 0);
-	    e1		    (0.5 0.5 0);
+    liftDir         (-0.2 0.5 0);
+//	    e3		    (-0.5 0.5 0);
+    dragDir         (0.5 0.2 0);
+//	    e1		    (0.5 0.5 0);
         pitchAxis   (0 0 1);
-        coordinateSystem
+        /*coordinateSystem
         {
             origin  (0.25 0 0);
             rotation
@@ -65,7 +65,7 @@ PIDcontroller
                 e3      (-0.5 0.5 0);
                 e1      (0.5 0.5 0);
             }
-        }
+        }*/
         magUInf     1.0;
         lRef        1.0;
         Aref        1;

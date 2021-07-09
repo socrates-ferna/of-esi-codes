@@ -25,7 +25,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::functionObjects::forceCoeffs
+    Foam::functionObjects::lforceCoeffs
 
 Group
     grpForcesFunctionObjects
@@ -63,9 +63,9 @@ Description
 Usage
     Example of function object specification:
     \verbatim
-    forceCoeffs1
+    lforceCoeffs1
     {
-        type        forceCoeffs;
+        type        lforceCoeffs;
         libs        (forces);
         ...
         log         yes;
@@ -92,7 +92,7 @@ Usage
     Where the entries comprise:
     \table
         Property     | Description                          | Required | Default
-        type         | Type name: forceCoeffs               | yes |
+        type         | Type name: lforceCoeffs               | yes |
         log          | Write force data to standard output  | no  | no
         writeFields  | Write force,moment coefficient fields | no | no
         patches      | Patches included in the forces calculation | yes |
@@ -159,14 +159,14 @@ See also
     Foam::functionObjects::forces
 
 SourceFiles
-    forceCoeffs.C
+    lforceCoeffs.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef functionObjects_forceCoeffs_H
-#define functionObjects_forceCoeffs_H
+#ifndef functionObjects_lforceCoeffs_H
+#define functionObjects_lforceCoeffs_H
 
-#include "forces.H"
+#include "lforces.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -176,12 +176,12 @@ namespace functionObjects
 {
 
 /*---------------------------------------------------------------------------*\
-                         Class forceCoeffs Declaration
+                         Class lforceCoeffs Declaration
 \*---------------------------------------------------------------------------*/
 
-class forceCoeffs
+class lforceCoeffs
 :
-    public forces
+    public lforces
 {
     // Private data
 
@@ -227,10 +227,10 @@ class forceCoeffs
     // Private Member Functions
 
         //- No copy construct
-        forceCoeffs(const forceCoeffs&) = delete;
+        lforceCoeffs(const lforceCoeffs&) = delete;
 
         //- No copy assignment
-        void operator=(const forceCoeffs&) = delete;
+        void operator=(const lforceCoeffs&) = delete;
 
 
 protected:
@@ -260,13 +260,13 @@ protected:
 public:
 
     //- Runtime type information
-    TypeName("forceCoeffs");
+    TypeName("lforceCoeffs");
 
 
     // Constructors
 
         //- Construct from Time and dictionary
-        forceCoeffs
+        lforceCoeffs
         (
             const word& name,
             const Time& runTime,
@@ -276,7 +276,7 @@ public:
 
 
     //- Destructor
-    virtual ~forceCoeffs() = default;
+    virtual ~lforceCoeffs() = default;
 
 
     // Member Functions

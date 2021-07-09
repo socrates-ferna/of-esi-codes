@@ -30,8 +30,8 @@ License
 #include "addToRunTimeSelectionTable.H"
 #include "Time.H"
 #include "polyMesh.H"
-#include "forces.H"
-#include "forceCoeffs.H"
+#include "lforces.H"
+#include "lforceCoeffs.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -201,7 +201,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldErrorIntegral_ = errorIntegral_;
     }
 
-    functionObjects::forces f("forces",t,forcesDict_,true);
+    functionObjects::lforces f("forces",t,forcesDict_,true);
     Vector<float> myForce;  // vector before. Vector is OF class
     /*if (controlTarget_ == 0 || controlTarget_ == 1)
     {
@@ -214,7 +214,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
     functionObjects::forceCoeffs ("forceCoeffs",t,forcesDict_,true);
     */
 
-   functionObjects::forceCoeffs fc("forceCoeffs",t,forcesDict_,true);
+   functionObjects::lforceCoeffs fc("forceCoeffs",t,forcesDict_,true);
 
     switch (controlTarget_) {
         case 0:
