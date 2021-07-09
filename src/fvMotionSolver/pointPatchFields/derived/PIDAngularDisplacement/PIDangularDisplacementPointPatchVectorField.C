@@ -61,7 +61,8 @@ PIDangularDisplacementPointPatchVectorField
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
-    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35))
+    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
+    direction_(forcesDict_.getOrDefault<scalar>("direction",3))
 {}
 
 
@@ -85,7 +86,8 @@ PIDangularDisplacementPointPatchVectorField
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
-    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35))
+    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
+    direction_(forcesDict_.getOrDefault<label>("direction",3))
 {
     if (!dict.found("value"))
     {
@@ -127,7 +129,8 @@ PIDangularDisplacementPointPatchVectorField
     D_(ptf.D_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
-    setPoint_(ptf.setPoint_)
+    setPoint_(ptf.setPoint_),
+    direction_(ptf.direction)
 {}
 
 

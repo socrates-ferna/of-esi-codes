@@ -83,6 +83,8 @@ class PIDangularDisplacementPointPatchVectorField
         wordList patches_;
         dictionary forcesDict_;
         scalar setPoint_=-0.35;
+        label direction_;
+        scalar delay_;
 
         //functionObjects::forceCoeffs fc;
 
