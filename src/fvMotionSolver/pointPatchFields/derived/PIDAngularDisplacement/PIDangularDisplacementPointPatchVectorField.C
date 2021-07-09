@@ -51,9 +51,9 @@ PIDangularDisplacementPointPatchVectorField
     fixedValuePointPatchField<vector>(p, iF),
     axis_(Zero),
     origin_(Zero),
-    angle0_(0.0),
-    amplitude_(0.0),
-    omega_(0.0),
+    angle0_(Zero),
+    amplitude_(Zero),
+    omega_(Zero),
     p0_(p.localPoints()),
     PIDcontrolDict_(this->readControl()),
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
@@ -121,13 +121,13 @@ PIDangularDisplacementPointPatchVectorField
     amplitude_(ptf.amplitude_),
     omega_(ptf.omega_),
     p0_(ptf.p0_, mapper),
-    PIDcontrolDict_(this->readControl()),
-    P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
-    I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
-    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
-    controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
-    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
-    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35))
+    PIDcontrolDict_(ptf.PIDcontrolDict_),
+    P_(ptf.P_),
+    I_(ptf.I_),
+    D_(ptf.D_),
+    controlTarget_(ptf.controlTarget_),
+    forcesDict_(ptf.forcesDict_),
+    setPoint_(ptf.setPoint_)
 {}
 
 
@@ -145,13 +145,13 @@ PIDangularDisplacementPointPatchVectorField
     amplitude_(ptf.amplitude_),
     omega_(ptf.omega_),
     p0_(ptf.p0_),
-    PIDcontrolDict_(this->readControl()),
-    P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
-    I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
-    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
-    controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
-    forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
-    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35))
+    PIDcontrolDict_(ptf.PIDcontrolDict_),
+    P_(ptf.P_),
+    I_(ptf.I_),
+    D_(ptf.D_),
+    controlTarget_(ptf.controlTarget_),
+    forcesDict_(ptf.forcesDict_),
+    setPoint_(ptf.setPoint_)
 {}
 
 
