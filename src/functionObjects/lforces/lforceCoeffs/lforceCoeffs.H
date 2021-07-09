@@ -200,6 +200,7 @@ class lforceCoeffs
             scalar Aref_;
 
 
+
         // File streams
 
             //- Integrated coefficients
@@ -278,12 +279,18 @@ public:
     //- Destructor
     virtual ~lforceCoeffs() = default;
 
+    // Data Members
+
+    List<scalar> coefList;
 
     // Member Functions
 
         //- Read the forces data
         virtual bool read(const dictionary&);
 
+        //- Return aerodynamic coefs only
+        //virtual List<scalar> returnrot();
+        virtual void calcrot();
         //- Execute
         virtual bool execute();
 

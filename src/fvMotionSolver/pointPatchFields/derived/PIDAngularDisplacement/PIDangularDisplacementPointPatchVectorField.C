@@ -202,7 +202,8 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
     }
 
     functionObjects::lforces f("forces",t,forcesDict_,true);
-    Vector<float> myForce;  // vector before. Vector is OF class
+    Vector<float> myForce;  // vector before. Vector is OF 
+    List<scalar> mycoefs(6);
     /*if (controlTarget_ == 0 || controlTarget_ == 1)
     {
         Info<<"   ";
@@ -234,9 +235,11 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
             Info<< "totalForce is: "<< myForce<<endl;
             Info<< "dir1 force is: "<< myForce.x() <<endl;
+            /*
             Info<< "comp0 force is: "<< myForce.component(0) <<endl;
             Info<< "comp1 force is: "<< myForce.component(1) <<endl;
             Info<< "comp2 force is: "<< myForce.component(2) <<endl;
+            */
             Info<< "target force is: "<< setPoint_ <<endl;
             //Info<< "e1:"<< f.coordSys_.e1()<<endl; NO VALE PORQUE SON PRIVADAS
             //Info<< "e2:"<< f.coordSys_.e2()<<endl;
@@ -249,12 +252,22 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
             // IMPLEMENT YOUR OWN FORCECOEFFS OR SIMPLY CALL EXECUTE?
             Info<<"forceCoeffs"<<endl;
-            fc.calcForcesMoment();
-            myForce = fc.forceEff();
-            fc.execute();
+            //fc.calcForcesMoment();
+            fc.calcrot();
+            mycoefs = fc.coefList;
+            Info<<"Cd"<< mycoefs[0]<<endl;
+            Info<<"Cs"<< mycoefs[1]<<endl;
+            Info<<"Cl"<< mycoefs[2]<<endl;
+            Info<<"CmRoll"<< mycoefs[3]<<endl;
+            Info<<"CmPitch"<< mycoefs[4]<<endl;
+            Info<<"CmYaw"<< mycoefs[5]<<endl;
+
+            //fc.execute();
+            /*
             Info<< "COEFStotalForce is: "<< myForce<<endl;
             Info<< "COEFSdir1 force is: "<< myForce.x() <<endl;
             Info<< "target force is: "<< setPoint_ <<endl;
+            */
             /*
             f.calcForcesMoment();
             

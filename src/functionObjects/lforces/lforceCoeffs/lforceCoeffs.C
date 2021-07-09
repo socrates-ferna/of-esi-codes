@@ -247,7 +247,8 @@ Foam::functionObjects::lforceCoeffs::lforceCoeffs
     ClBinFilePtr_(),
     CmRollBinFilePtr_(),
     CmPitchBinFilePtr_(),
-    CmYawBinFilePtr_()
+    CmYawBinFilePtr_(),
+    coefList(6,Zero)
 {
     if (readFields)
     {
@@ -323,6 +324,75 @@ bool Foam::functionObjects::lforceCoeffs::read(const dictionary& dict)
     return true;
 }
 
+void Foam::functionObjects::lforceCoeffs::calcrot()
+{
+    //List<scalar> coefList(6);
+
+    lforces::calcForcesMoment();
+
+    Info<< "Returning aero coefficients"<<endl;
+    // Storage for pressure, viscous and porous contributions to coeffs
+    List<Field<scalar>> dragCoeffs(3);
+    List<Field<scalar>> sideCoeffs(3);
+    List<Field<scalar>> liftCoeffs(3);
+    List<Field<scalar>> rollMomentCoeffs(3);
+    List<Field<scalar>> pitchMomentCoeffs(3);
+    List<Field<scalar>> yawMomentCoeffs(3);
+
+    forAll(liftCoeffs, i)
+    {
+        dragCoeffs[i].setSize(nBin_);
+        sideCoeffs[i].setSize(nBin_);
+        liftCoeffs[i].setSize(nBin_);
+        rollMomentCoeffs[i].setSize(nBin_);
+        pitchMomentCoeffs[i].setSize(nBin_);
+        yawMomentCoeffs[i].setSize(nBin_);
+    }
+
+    // Calculate coefficients
+    scalar CdTot = 0;
+    scalar CsTot = 0;
+    scalar ClTot = 0;
+    scalar CmRollTot = 0;
+    scalar CmPitchTot = 0;
+    scalar CmYawTot = 0;
+
+    const scalar pDyn = 0.5*rhoRef_*sqr(magUInf_);
+
+    // Avoid divide by zero in 2D cases
+    const scalar momentScaling = 1.0/(Aref_*pDyn*lRef_ + SMALL);
+    const scalar forceScaling = 1.0/(Aref_*pDyn + SMALL);
+
+    forAll(liftCoeffs, i)
+    {
+        const Field<vector> localForce(coordSys_.localVector(force_[i]));
+        const Field<vector> localMoment(coordSys_.localVector(moment_[i]));
+
+        dragCoeffs[i] = forceScaling*(localForce.component(0));
+        sideCoeffs[i] = forceScaling*(localForce.component(1));
+        liftCoeffs[i] = forceScaling*(localForce.component(2));
+        rollMomentCoeffs[i] = momentScaling*(localMoment.component(0));
+        pitchMomentCoeffs[i] = momentScaling*(localMoment.component(1));
+        yawMomentCoeffs[i] = momentScaling*(localMoment.component(2));
+
+        CdTot += sum(dragCoeffs[i]);
+        CsTot += sum(sideCoeffs[i]);
+        ClTot += sum(liftCoeffs[i]);
+        CmRollTot += sum(rollMomentCoeffs[i]);
+        CmPitchTot += sum(pitchMomentCoeffs[i]);
+        CmYawTot += sum(yawMomentCoeffs[i]);
+    }
+
+    coefList[0]=CdTot;
+    coefList[1]=CsTot;
+    coefList[2]=ClTot;
+    coefList[3]=CmRollTot;
+    coefList[4]=CmPitchTot;
+    coefList[6]=CmYawTot;
+
+    //return coefList;
+
+}
 
 bool Foam::functionObjects::lforceCoeffs::execute()
 {

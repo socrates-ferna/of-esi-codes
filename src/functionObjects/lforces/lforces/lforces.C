@@ -1100,7 +1100,6 @@ Foam::vector Foam::functionObjects::lforces::forceEff() const
     forAll(force_,i)
     {
         localForce[i].setSize(nBin_);
-        //const List<Field<vector>> localForce(coordSys_.localVector(force_[i]));
         localForce[i] = coordSys_.localVector(force_[i]);
     }
     return sum(localForce[0]) + sum(localForce[1]) + sum(localForce[2]);
@@ -1109,7 +1108,13 @@ Foam::vector Foam::functionObjects::lforces::forceEff() const
 
 Foam::vector Foam::functionObjects::lforces::momentEff() const
 {
-    return sum(moment_[0]) + sum(moment_[1]) + sum(moment_[2]);
+    List<Field<vector>> localMoment(3);
+    forAll(moment_,i)
+    {
+        localMoment.setSize(nBin_);
+        localMoment[i] = coordSys_.localVector(moment_[i]);
+    }
+    return sum(localMoment[0]) + sum(localMoment[1]) + sum(localMoment[2]);
 }
 
 
