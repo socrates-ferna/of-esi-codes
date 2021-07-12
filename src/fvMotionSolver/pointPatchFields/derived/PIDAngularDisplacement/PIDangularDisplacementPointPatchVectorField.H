@@ -85,6 +85,8 @@ class PIDangularDisplacementPointPatchVectorField
         scalar setPoint_=-0.35;
         label direction_;
         scalar delay_;
+        List<scalar> mycoefs;
+        Vector<scalar> myForce;
 
         //functionObjects::forceCoeffs fc;
 

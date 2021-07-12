@@ -12,3 +12,4 @@ The point displacement class uses a PID controller to reach a specified setPoint
 
 Contributors:
 - Sócrates Fernández
+- Tom-Robin Teschner [Thesis supervisor]: (automated pointwise airfoil mesher: meshUnstructured.glf)

@@ -330,6 +330,8 @@ void Foam::functionObjects::lforceCoeffs::calcrot()
 
     lforces::calcForcesMoment();
 
+    coefList = Zero; //notcompiled
+
     Info<< "Returning aero coefficients"<<endl;
     // Storage for pressure, viscous and porous contributions to coeffs
     List<Field<scalar>> dragCoeffs(3);

@@ -62,7 +62,9 @@ PIDangularDisplacementPointPatchVectorField
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
     setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
-    direction_(forcesDict_.getOrDefault<scalar>("direction",3))
+    direction_(forcesDict_.getOrDefault<scalar>("direction",3)),
+    mycoefs(6,Zero),
+    myForce(Zero)
 {}
 
 
@@ -87,7 +89,9 @@ PIDangularDisplacementPointPatchVectorField
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
     setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
-    direction_(forcesDict_.getOrDefault<label>("direction",3))
+    direction_(forcesDict_.getOrDefault<label>("direction",3)),
+    mycoefs(6,Zero),
+    myForce(Zero)
 {
     if (!dict.found("value"))
     {
@@ -130,7 +134,9 @@ PIDangularDisplacementPointPatchVectorField
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
     setPoint_(ptf.setPoint_),
-    direction_(ptf.direction_)
+    direction_(ptf.direction_),
+    mycoefs(6,Zero),
+    myForce(Zero)
 {}
 
 
@@ -155,7 +161,9 @@ PIDangularDisplacementPointPatchVectorField
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
     setPoint_(ptf.setPoint_),
-    direction_(ptf.direction_)
+    direction_(ptf.direction_),
+    mycoefs(6,Zero),
+    myForce(Zero)
 {}
 
 
@@ -205,30 +213,17 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldErrorIntegral_ = errorIntegral_;
     }
 
-    functionObjects::lforces f("forces",t,forcesDict_,true);
-    Vector<float> myForce;  // vector before. Vector is OF 
-    List<scalar> mycoefs(6);
-    /*if (controlTarget_ == 0 || controlTarget_ == 1)
-    {
-        Info<<"   ";
-        functionObjects::forceCoeffs fc("forceCoeffs",t,forcesDict_,true);
-    }*/
-
-    /*
-    functionObjects::forceCoeffs fc = 
-    functionObjects::forceCoeffs ("forceCoeffs",t,forcesDict_,true);
-    */
-
-   functionObjects::lforceCoeffs fc("forceCoeffs",t,forcesDict_,true);
+    //functionObjects::lforces f("forces",t,forcesDict_,true);
+    functionObjects::lforceCoeffs fc("forceCoeffs",t,forcesDict_,true);
 
     switch (controlTarget_) {
         case 0:
             // not implemented yet
             
             //functionObjects::forces f("forces", mesh, forcesDict_);
-            f.calcForcesMoment();
+            fc.calcForcesMoment();
 
-            myForce = f.forceEff();
+            myForce = fc.forceEff();
             error_ = setPoint_ - myForce.x(); // this should choose x,y,z according to direction
 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
@@ -265,6 +260,9 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             Info<<"CmRoll"<< mycoefs[3]<<endl;
             Info<<"CmPitch"<< mycoefs[4]<<endl;
             Info<<"CmYaw"<< mycoefs[5]<<endl;
+
+            error_ = setPoint_ - mycoefs[1];
+            
 
             //fc.execute();
             /*
