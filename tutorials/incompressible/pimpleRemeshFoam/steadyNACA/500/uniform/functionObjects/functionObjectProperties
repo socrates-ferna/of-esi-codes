@@ -1,0 +1,83 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "500/uniform/functionObjects";
+    object      functionObjectProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+runTimeControl1
+{
+    condition1
+    {
+        Cl
+        {
+        }
+    }
+}
+
+runTimeControl2
+{
+    conditions1
+    {
+        startTime       1;
+    }
+}
+
+results
+{
+    forceCoeffs
+    {
+        scalar
+        {
+            Cd              0.007104210814024054;
+            Cs              1.655914629000904e-22;
+            Cl              -0.0168322291648525;
+            CmRoll          -0.008416114582426268;
+            CmPitch         -0.007217617260607124;
+            CmYaw           -0.003552105407012025;
+            Cd(f)           -0.004864009175414241;
+            Cd(r)           0.01196821998943829;
+            Cs(f)           -0.003552105407012025;
+            Cs(r)           0.003552105407012025;
+            Cl(f)           -0.01563373184303338;
+            Cl(r)           -0.001198497321819128;
+        }
+    }
+    residuals
+    {
+        scalar
+        {
+            Ux_initial      0.000534273;
+            Ux_final        4.756e-06;
+            Uy_initial      0.00787768;
+            Uy_final        3.92707e-05;
+            k_initial       4.43086e-09;
+            k_final         4.43086e-09;
+            p_initial       0.0213972;
+            p_final         0.000187012;
+            omega_initial   2.34236e-13;
+            omega_final     2.34236e-13;
+        }
+        label
+        {
+            Ux_iters        3;
+            Uy_iters        5;
+            k_iters         0;
+            p_iters         6;
+            omega_iters     0;
+        }
+    }
+}
+
+
+// ************************************************************************* //

@@ -1,0 +1,71 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "8/uniform/functionObjects";
+    object      functionObjectProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+results
+{
+    forceCoeffs
+    {
+        scalar
+        {
+            Cd              0.2080034252787056;
+            Cs              5.56822956131617e-23;
+            Cl              0.4918893919857954;
+            CmRoll          0.2459446959928978;
+            CmPitch         -0.002073018691439065;
+            CmYaw           -0.1040017126393528;
+            Cd(f)           0.3499464086322506;
+            Cd(r)           -0.1419429833535449;
+            Cs(f)           -0.1040017126393528;
+            Cs(r)           0.1040017126393528;
+            Cl(f)           0.2438716773014586;
+            Cl(r)           0.2480177146843368;
+        }
+    }
+    residuals
+    {
+        scalar
+        {
+            Ux_initial      9.79403e-07;
+            Ux_final        1.88186e-11;
+            Uy_initial      2.46814e-06;
+            Uy_final        3.94234e-11;
+            k_initial       3.09671e-09;
+            k_final         3.09671e-09;
+            p_initial       0.00141947;
+            p_final         9.299129999999999e-06;
+            cellDisplacementx_initial 0;
+            cellDisplacementx_final 0;
+            cellDisplacementy_initial 0;
+            cellDisplacementy_final 0;
+            omega_initial   2.00111e-10;
+            omega_final     2.00111e-10;
+        }
+        label
+        {
+            Ux_iters        1;
+            Uy_iters        1;
+            k_iters         0;
+            p_iters         4;
+            cellDisplacementx_iters 0;
+            cellDisplacementy_iters 0;
+            omega_iters     0;
+        }
+    }
+}
+
+
+// ************************************************************************* //

@@ -130,7 +130,7 @@ PIDangularDisplacementPointPatchVectorField
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
     setPoint_(ptf.setPoint_),
-    direction_(ptf.direction)
+    direction_(ptf.direction_)
 {}
 
 
@@ -154,7 +154,8 @@ PIDangularDisplacementPointPatchVectorField
     D_(ptf.D_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
-    setPoint_(ptf.setPoint_)
+    setPoint_(ptf.setPoint_),
+    direction_(ptf.direction_)
 {}
 
 

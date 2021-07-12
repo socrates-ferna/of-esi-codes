@@ -1,0 +1,95 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "742/uniform/functionObjects";
+    object      functionObjectProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+runTimeControl1
+{
+    condition1
+    {
+        Cl
+        {
+            totalTime       482;
+        }
+        iter            240;
+    }
+}
+
+runTimeControl2
+{
+    conditions1
+    {
+        startTime       1;
+    }
+    active          0;
+}
+
+results
+{
+    forceCoeffs
+    {
+        scalar
+        {
+            Cd              0.006350017730445624;
+            Cs              2.692623910911104e-22;
+            Cl              0.05163501288621055;
+            CmRoll          0.02581750644310528;
+            CmPitch         -0.01458826119516251;
+            CmYaw           -0.003175008865222812;
+            Cd(f)           0.02899251530832809;
+            Cd(r)           -0.02264249757788246;
+            Cs(f)           -0.003175008865222812;
+            Cs(r)           0.003175008865222812;
+            Cl(f)           0.01122924524794276;
+            Cl(r)           0.04040576763826779;
+        }
+    }
+    residuals
+    {
+        scalar
+        {
+            Ux_initial      0.0011242;
+            Ux_final        4.70917e-06;
+            Uy_initial      0.0162249;
+            Uy_final        0.000126688;
+            k_initial       4.43086e-09;
+            k_final         4.43086e-09;
+            p_initial       0.0482141;
+            p_final         0.000389195;
+            omega_initial   2.34236e-13;
+            omega_final     2.34236e-13;
+        }
+        label
+        {
+            Ux_iters        4;
+            Uy_iters        4;
+            k_iters         0;
+            p_iters         6;
+            omega_iters     0;
+        }
+    }
+    runTimeControl1
+    {
+        scalar
+        {
+            ClMean          0.05164005961756909;
+        }
+    }
+}
+
+triggerIndex    1;
+
+
+// ************************************************************************* //
