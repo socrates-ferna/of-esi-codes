@@ -76,7 +76,7 @@ class PIDangularDisplacementPointPatchVectorField
         scalar oldOmega_=0.0;
         scalar errorDifferential_=0.0;
         label  timeIndex_=0;
-        scalar auxangle_=0;
+        scalar oldangle_=0;
         scalar angle=0;
 
         int controlTarget_;
@@ -87,6 +87,12 @@ class PIDangularDisplacementPointPatchVectorField
         scalar delay_;
         List<scalar> mycoefs;
         Vector<scalar> myForce;
+
+        //actuator limits
+        scalar anglemax_;
+        scalar anglemin_;
+        scalar omegamax_;
+        scalar omegamin_;
 
         //functionObjects::forceCoeffs fc;
 

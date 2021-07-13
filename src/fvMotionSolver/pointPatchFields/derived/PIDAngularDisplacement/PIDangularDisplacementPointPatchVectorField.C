@@ -32,7 +32,7 @@ License
 #include "polyMesh.H"
 #include "lforces.H"
 #include "lforceCoeffs.H"
-
+#include "FIFOStack.H" // implementation pending
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -64,7 +64,11 @@ PIDangularDisplacementPointPatchVectorField
     setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
     direction_(forcesDict_.getOrDefault<scalar>("direction",3)),
     mycoefs(6,Zero),
-    myForce(Zero)
+    myForce(Zero),
+    anglemax_(Foam::constant::mathematical::pi),
+    anglemin_(-1*Foam::constant::mathematical::pi),
+    omegamax_(this->anglemax_),
+    omegamin_(this->anglemin_)
 {}
 
 
@@ -91,7 +95,11 @@ PIDangularDisplacementPointPatchVectorField
     setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
     direction_(forcesDict_.getOrDefault<label>("direction",3)),
     mycoefs(6,Zero),
-    myForce(Zero)
+    myForce(Zero),
+    anglemax_(Foam::constant::mathematical::pi),
+    anglemin_(-1*Foam::constant::mathematical::pi),
+    omegamax_(this->anglemax_),
+    omegamin_(this->anglemin_)
 {
     if (!dict.found("value"))
     {
@@ -107,6 +115,20 @@ PIDangularDisplacementPointPatchVectorField
         p0_ = p.localPoints();
     }
     //PIDcontrolDict_ = readControl();
+    // esto no lo lee el hijoputa
+    //Info<<"AQUI TAMPOCO?"<<endl;
+    //PIDcontrolDict_.
+    //Info<<"P:"<<P_<<endl;
+    //Info<<PIDcontrolDict_<<endl;
+    if (PIDcontrolDict_.subDict("PIDcontroller").isDict("actuatorModelCoeffs"))
+    {
+        Info<< "GOT HERE"<<endl;
+        dictionary actuatorModel(PIDcontrolDict_.subDict("PIDcontroller").subDict("actuatorModelCoeffs"));
+        anglemax_ = actuatorModel.getOrDefault<scalar>("angleMax",anglemax_);
+        anglemin_ = actuatorModel.getOrDefault<scalar>("angleMin",anglemin_);
+        omegamax_ = actuatorModel.getOrDefault<scalar>("omegaMax",omegamax_);
+        omegamin_ = actuatorModel.getOrDefault<scalar>("omegaMin",omegamin_);
+    }
     
 }
 
@@ -136,7 +158,11 @@ PIDangularDisplacementPointPatchVectorField
     setPoint_(ptf.setPoint_),
     direction_(ptf.direction_),
     mycoefs(6,Zero),
-    myForce(Zero)
+    myForce(Zero),
+    anglemax_(ptf.anglemax_),
+    anglemin_(ptf.anglemin_),
+    omegamax_(ptf.omegamax_),
+    omegamin_(ptf.omegamin_)
 {}
 
 
@@ -163,7 +189,11 @@ PIDangularDisplacementPointPatchVectorField
     setPoint_(ptf.setPoint_),
     direction_(ptf.direction_),
     mycoefs(6,Zero),
-    myForce(Zero)
+    myForce(Zero),
+    anglemax_(ptf.anglemax_),
+    anglemin_(ptf.anglemin_),
+    omegamax_(ptf.omegamax_),
+    omegamin_(ptf.omegamin_)
 {}
 
 
@@ -202,8 +232,30 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         return;
     }
 
+
     const polyMesh& mesh = this->internalField().mesh()();
     const Time& t = mesh.time();
+    /* PENDING TO DECLARE CONTROLDELAY VAR
+    if (t.value() < controDelay_)
+    {
+        angle = angle0 + omega_*t.value();
+        vector axisHat = axis_/mag(axis_);
+        vectorField p0Rel(p0_ - origin_);
+        // report calculated angles
+        report(Info);
+        vectorField::operator=
+        (
+            p0Rel*(cos(angle) - 1)
+        + (axisHat ^ p0Rel*sin(angle))
+        + (axisHat & p0Rel)*(1 - cos(angle))*axisHat
+        );
+
+        fixedValuePointPatchField<vector>::updateCoeffs();
+
+        return;
+    }
+    */
+    scalar dt(t.deltaTValue());
 
     if (timeIndex_!= t.timeIndex())
     {
@@ -211,6 +263,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldOmega_= omega_;
         oldError_ = error_;
         oldErrorIntegral_ = errorIntegral_;
+        oldangle_ = angle;
     }
 
     //functionObjects::lforces f("forces",t,forcesDict_,true);
@@ -226,11 +279,11 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             myForce = fc.forceEff();
             error_ = setPoint_ - myForce.x(); // this should choose x,y,z according to direction
 
-            errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
-            errorDifferential_ = oldError_ - error_;
+            errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
+            errorDifferential_ = (error_ - oldError_)/dt;
             //const scalar errorDifferential = oldError_ - error_;
-            omega_ = oldOmega_ + P_*error_ + errorIntegral_ + D_*errorDifferential_/t.deltaTValue();
-
+            angle = oldangle_ + P_*error_ + errorIntegral_ + D_*errorDifferential_;
+            omega_ = (angle - oldangle_)/dt;
 
             Info<< "totalForce is: "<< myForce<<endl;
             Info<< "dir1 force is: "<< myForce.x() <<endl;
@@ -255,13 +308,18 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             fc.calcrot();
             mycoefs = fc.coefList;
             Info<<"Cd"<< mycoefs[0]<<endl;
-            Info<<"Cs"<< mycoefs[1]<<endl;
+            //Info<<"Cs"<< mycoefs[1]<<endl;
             Info<<"Cl"<< mycoefs[2]<<endl;
-            Info<<"CmRoll"<< mycoefs[3]<<endl;
-            Info<<"CmPitch"<< mycoefs[4]<<endl;
-            Info<<"CmYaw"<< mycoefs[5]<<endl;
+            //Info<<"CmRoll"<< mycoefs[3]<<endl;
+            //Info<<"CmPitch"<< mycoefs[4]<<endl;
+            //Info<<"CmYaw"<< mycoefs[5]<<endl;
 
-            error_ = setPoint_ - mycoefs[1];
+            error_ = setPoint_ - mycoefs[2]; // pending option to choose other coeffs than Cl
+            errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
+            errorDifferential_ = (error_ - oldError_)/dt;
+            angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
+            omega_ = (angle - oldangle_)/dt; 
+
             
 
             //fc.execute();
@@ -289,17 +347,13 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
         case 2:
 
-            Info<< "angle antes: "<< angle<< endl;
-            //Info<< dMD.lookup("dummyValue")<< endl;
-            //write(Info);
-
-            // PID CONTROL
             error_ = setPoint_ - angle;
 
-            errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*t.deltaTValue();
-            //const scalar errorDifferential = oldError_ - error_;
-            errorDifferential_ = oldError_ - error_;
-            omega_ = oldOmega_ + P_*error_ + errorIntegral_ + D_*errorDifferential_/t.deltaTValue();
+            errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
+            errorDifferential_ = (error_ - oldError_)/dt;
+            angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
+            omega_ = (angle - oldangle_)/dt;
+
             break;
 
         default:
@@ -313,9 +367,50 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         // EXTERNAL CONTROL WILL BE DONE IN ANOTHER pointPatchFields option
     }
 
+    // SATURATOR. LIMITS MAXIMUM ANGLE & OMEGA
 
+    // 1. Check omega limits and modify itself and angle accordingly
+    // REQUIRES CORRECT OMEGA CALCULATION IN ABOVE CODE LINES!!
+    // you could declare a state vector that contains angle and omega so that a function can be called
+    // you should learn how to use the tensor and rotation classes to keep track of these things??
+
+    if (pos(omega_) && omega_>omegamax_)
+    {
+        Info<<"Limiting omega from "<< omega_<< " to "<< omegamax_<< " (rad/s)"<<endl;
+        Info<<"Control signal was "<< angle;
+        omega_ = omegamax_;
+        angle = oldangle_ + omega_*dt;
+        Info<<"(rad). Corrected signal is "<<angle<<"(rad)"<<endl;
+    }
+    else if (neg(omega_) && omegamin_>omega_)
+    {
+        Info<<"Limiting omega from "<< omega_<< " to "<< omegamin_<< " (rad/s)"<<endl;
+        Info<<"Control signal was "<< angle;
+        omega_ = omegamin_;
+        angle = oldangle_ + omega_*dt;
+        Info<<"(rad). Corrected signal is "<<angle<<"(rad)"<<endl;
+    }
+
+    if (pos(angle) && angle>anglemax_)
+    {
+        Info<<"Limiting angle from "<<angle<<" to "<<anglemax_<<" (rad)"<<endl;
+        Info<<"Mesh omega was "<<omega_;
+        omega_ = (anglemax_ - oldangle_)/dt;
+        angle = anglemax_;
+        Info<<" (rad/s). Corrected mesh omega is "<<omega_<<"(rad/s)"<<endl;
+    }
+    else if (neg(angle) && angle<anglemin_)
+    {
+        Info<<"Limiting angle from "<<angle<<" to "<<anglemin_<<" (rad)"<<endl;
+        Info<<"Mesh omega was "<<omega_;
+        omega_ = (anglemin_ - oldangle_)/dt;
+        angle = anglemin_;
+        Info<<" (rad/s). Corrected mesh omega is "<<omega_<<"(rad/s)"<<endl;
+    }
+    //scalar signo(sign(-error_));
+    //Info<< "signo es: "<<signo<<endl;
     // MOVEMENT BASED ON CALCULATED OMEGA
-    angle = angle0_ + angle + omega_*t.deltaTValue();
+    angle = angle0_ + angle ;//+ omega_*dt;
     //auxangle_ = angle0_ + omega_*t.value();  //amplitude_*sin(omega_*t.value());
     vector axisHat = axis_/mag(axis_);
     vectorField p0Rel(p0_ - origin_);
@@ -346,6 +441,7 @@ void PIDangularDisplacementPointPatchVectorField::write
     os.writeEntry("angle", angle);
     os.writeEntry("amplitude", amplitude_);
     os.writeEntry("omega", omega_);
+    os.writeEntry("omegamin", omegamin_);
     //p0_.writeEntry("p0", os);
     os.writeEntry("P",P_);
     os.writeEntry("I",I_);
@@ -380,10 +476,14 @@ void PIDangularDisplacementPointPatchVectorField::report
     os.writeEntry("omega", omega_);
     os.writeEntry("error", error_);
     os.writeEntry("errorIntegral", errorIntegral_);
+    os.writeEntry("errorDifferential",errorDifferential_);
+    
+    //os.writeEntry("omegamin", omegamin_);
     //os.writeEntry("auxangle", auxangle_);
     os.writeEntry("angle", angle);
     return;
 }
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
