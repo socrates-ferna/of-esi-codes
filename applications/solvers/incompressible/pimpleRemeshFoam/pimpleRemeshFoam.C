@@ -5,8 +5,8 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2011-2017 OpenFOAM Foundation
-    Copyright (C) 2019 OpenCFD Ltd.
+    Author: Socrates Fernandez
+    Author: Socrates Fernandez
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -25,7 +25,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    pimpleFoam.C
+    pimpleRemeshFoam.C
 
 Group
     grpIncompressibleSolvers
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 */
     turbulence->validate();
 
-    label nFailedChecks = 0;
+    //label nFailedChecks = 0;
 
     bool failedChecks = false;
 
@@ -160,7 +160,31 @@ int main(int argc, char *argv[])
         )
     );
 
-
+    IOdictionary remeshDict
+    (
+        IOobject
+        (
+            "remeshDict",
+            mesh.time().system(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        )
+    );
+    //Info<<remeshDict.get<wordRes>("options")<<endl; // crashes bc of -b option
+    string remeshCommand;
+    string mesher(remeshDict.getOrDefault<word>("mesher","snappyHexMesh"));
+    string language(remeshDict.getOrDefault<word>("language","bash"));
+    string logFile(remeshDict.getOrDefault<word>("logFile","log.pimpleRemeshFoam"));
+    string script(remeshDict.getOrDefault<word>("script","remesh.sh"));
+    string op1(remeshDict.getOrDefault<word>("option1",""));
+    op1 = "-" + op1;
+    string op2(remeshDict.getOrDefault<word>("option2",""));
+    string op3(remeshDict.getOrDefault<word>("option3",""));
+    remeshCommand = language+ " " + script+ " " + logFile+ " " + mesher+ " " + op1+ " " + op2+ " " + op3;
+    Info<<"Remesh command is: "<<remeshCommand<<endl;
+    Info<< "Test call"<<endl;
+    system(remeshCommand);
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -171,7 +195,7 @@ int main(int argc, char *argv[])
         #include "readDyMControls.H"   //MIRA ESTO POR SI TE ES ÚTIL
         #include "CourantNo.H"
         #include "setDeltaT.H"
-        //#include "setMeshDeltaT.H"
+        #include "setMeshDeltaT.H"
         ++runTime;
         lastMeshCheck = lastMeshCheck + runTime.deltaTValue();
         Info<< "Time = " << runTime.timeName() << nl << endl; 
@@ -234,18 +258,24 @@ int main(int argc, char *argv[])
                     if(Pstream::master())
                     {
                         //call remeshing routine
-                        system("pointwise -b meshUnstructured.glf parameters.dat");
+                        system(remeshCommand);
                 
                         //call mapFields
                         system("mapFields -case ../aux_case -consistent -sourceTime latestTime .");
                         //missing angle position for correct remeshing and mapFieldsDict for cuttingPatches
                     }
                 }
+                else
+                {
+                    system(remeshCommand);
+                    system("mapFields -case ../aux_case -consistent -sourceTime latestTime .");
+                }
                 //reset failedChecks
                 failedChecks = false;
             }
             lastMeshCheck = 0.0;
         }
+        
         //determine whether remesh is necesary
         //build a mapPolyMesh object
         //remesh
