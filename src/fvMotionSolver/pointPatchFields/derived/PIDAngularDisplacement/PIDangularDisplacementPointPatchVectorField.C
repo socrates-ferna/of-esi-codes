@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2011-2016 OpenFOAM Foundation
+        Author: Socrates Fernandez
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -59,6 +59,7 @@ PIDangularDisplacementPointPatchVectorField
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("controlDelay",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
     setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
@@ -90,6 +91,7 @@ PIDangularDisplacementPointPatchVectorField
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("controlDelay",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
     setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
@@ -118,11 +120,17 @@ PIDangularDisplacementPointPatchVectorField
     // esto no lo lee el hijoputa
     //Info<<"AQUI TAMPOCO?"<<endl;
     //PIDcontrolDict_.
-    //Info<<"P:"<<P_<<endl;
-    //Info<<PIDcontrolDict_<<endl;
+    Info<<"P: "<<P_<<endl;
+    Info<<"I: "<<I_<<endl;
+    Info<<"D: "<<D_<<endl;
+    Info<<"setPoint: "<<setPoint_<<endl;
+    Info<<"Control start delay: "<<controlDelay_<<endl;
+    Info<<"Full PIDcontrolDict file:"<<endl;
+    Info<<"---------------------------------------------"<<endl;
+    Info<<PIDcontrolDict_<<endl;
     if (PIDcontrolDict_.subDict("PIDcontroller").isDict("actuatorModelCoeffs"))
     {
-        Info<< "GOT HERE"<<endl;
+        //Info<< "GOT HERE"<<endl;
         dictionary actuatorModel(PIDcontrolDict_.subDict("PIDcontroller").subDict("actuatorModelCoeffs"));
         anglemax_ = actuatorModel.getOrDefault<scalar>("angleMax",anglemax_);
         anglemin_ = actuatorModel.getOrDefault<scalar>("angleMin",anglemin_);
@@ -153,6 +161,7 @@ PIDangularDisplacementPointPatchVectorField
     P_(ptf.P_),
     I_(ptf.I_),
     D_(ptf.D_),
+    controlDelay_(ptf.controlDelay_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
     setPoint_(ptf.setPoint_),
@@ -184,6 +193,7 @@ PIDangularDisplacementPointPatchVectorField
     P_(ptf.P_),
     I_(ptf.I_),
     D_(ptf.D_),
+    controlDelay_(ptf.controlDelay_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
     setPoint_(ptf.setPoint_),
@@ -235,13 +245,14 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
     const polyMesh& mesh = this->internalField().mesh()();
     const Time& t = mesh.time();
-    /* PENDING TO DECLARE CONTROLDELAY VAR
-    if (t.value() < controDelay_)
+    // PENDING TO DECLARE CONTROLDELAY VAR
+    if (t.value() < controlDelay_)
     {
-        angle = angle0 + omega_*t.value();
+        angle = angle0_ + omega_*t.value();
         vector axisHat = axis_/mag(axis_);
         vectorField p0Rel(p0_ - origin_);
         // report calculated angles
+        Info<<"Control not activated yet"<<endl;
         report(Info);
         vectorField::operator=
         (
@@ -254,7 +265,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
         return;
     }
-    */
+    
     scalar dt(t.deltaTValue());
 
     if (timeIndex_!= t.timeIndex())
@@ -266,6 +277,8 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldangle_ = angle;
     }
 
+    FIFOStack<scalar> windowTimes; // work in progress
+
     //functionObjects::lforces f("forces",t,forcesDict_,true);
     functionObjects::lforceCoeffs fc("forceCoeffs",t,forcesDict_,true);
 
@@ -276,17 +289,17 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             //functionObjects::forces f("forces", mesh, forcesDict_);
             fc.calcForcesMoment();
 
-            myForce = fc.forceEff();
+            myForce = fc.forceEff(); // THIS IS STILL PENDING
             error_ = setPoint_ - myForce.x(); // this should choose x,y,z according to direction
 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
             errorDifferential_ = (error_ - oldError_)/dt;
             //const scalar errorDifferential = oldError_ - error_;
-            angle = oldangle_ + P_*error_ + errorIntegral_ + D_*errorDifferential_;
+            angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
             omega_ = (angle - oldangle_)/dt;
 
-            Info<< "totalForce is: "<< myForce<<endl;
-            Info<< "dir1 force is: "<< myForce.x() <<endl;
+            Info<< "Controlled variable (Lift) : "<< myForce[2]<<endl;
+            //Info<< "dir1 force is: "<< myForce.x() <<endl;
             /*
             Info<< "comp0 force is: "<< myForce.component(0) <<endl;
             Info<< "comp1 force is: "<< myForce.component(1) <<endl;
@@ -303,13 +316,13 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             // not implemented yet
 
             // IMPLEMENT YOUR OWN FORCECOEFFS OR SIMPLY CALL EXECUTE?
-            Info<<"forceCoeffs"<<endl;
+            //Info<<"forceCoeffs"<<endl;
             //fc.calcForcesMoment();
             fc.calcrot();
             mycoefs = fc.coefList;
-            Info<<"Cd"<< mycoefs[0]<<endl;
+            //Info<<"Cd"<< mycoefs[0]<<endl;
             //Info<<"Cs"<< mycoefs[1]<<endl;
-            Info<<"Cl"<< mycoefs[2]<<endl;
+            Info<<"Controlled Variable (Cl): "<< mycoefs[2]<<endl;
             //Info<<"CmRoll"<< mycoefs[3]<<endl;
             //Info<<"CmPitch"<< mycoefs[4]<<endl;
             //Info<<"CmYaw"<< mycoefs[5]<<endl;
@@ -367,6 +380,9 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         // EXTERNAL CONTROL WILL BE DONE IN ANOTHER pointPatchFields option
     }
 
+    rawomega_ = omega_;
+    rawangle_ = angle;
+
     // SATURATOR. LIMITS MAXIMUM ANGLE & OMEGA
 
     // 1. Check omega limits and modify itself and angle accordingly
@@ -376,41 +392,41 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
     if (pos(omega_) && omega_>omegamax_)
     {
-        Info<<"Limiting omega from "<< omega_<< " to "<< omegamax_<< " (rad/s)"<<endl;
-        Info<<"Control signal was "<< angle;
+        Info<<"Limiting omega "<<endl;//from "<< omega_<< " to "<< omegamax_<< " (rad/s)"<<endl;
+        //Info<<"Control signal was "<< angle;
         omega_ = omegamax_;
         angle = oldangle_ + omega_*dt;
-        Info<<"(rad). Corrected signal is "<<angle<<"(rad)"<<endl;
+        //Info<<"(rad). Corrected signal is "<<angle<<"(rad)"<<endl;
     }
     else if (neg(omega_) && omegamin_>omega_)
     {
-        Info<<"Limiting omega from "<< omega_<< " to "<< omegamin_<< " (rad/s)"<<endl;
-        Info<<"Control signal was "<< angle;
+        Info<<"Limiting omega "<<endl;//from "<< omega_<< " to "<< omegamax_<< " (rad/s)"<<endl;
+        //Info<<"Control signal was "<< angle;
         omega_ = omegamin_;
         angle = oldangle_ + omega_*dt;
-        Info<<"(rad). Corrected signal is "<<angle<<"(rad)"<<endl;
+        //Info<<"(rad). Corrected signal is "<<angle<<"(rad)"<<endl;
     }
 
     if (pos(angle) && angle>anglemax_)
     {
-        Info<<"Limiting angle from "<<angle<<" to "<<anglemax_<<" (rad)"<<endl;
-        Info<<"Mesh omega was "<<omega_;
+        Info<<"Limiting angle"<<endl;// from "<<angle<<" to "<<anglemax_<<" (rad)"<<endl;
+        //Info<<"Mesh omega was "<<omega_;
         omega_ = (anglemax_ - oldangle_)/dt;
         angle = anglemax_;
-        Info<<" (rad/s). Corrected mesh omega is "<<omega_<<"(rad/s)"<<endl;
+        //Info<<" (rad/s). Corrected mesh omega is "<<omega_<<"(rad/s)"<<endl;
     }
     else if (neg(angle) && angle<anglemin_)
     {
-        Info<<"Limiting angle from "<<angle<<" to "<<anglemin_<<" (rad)"<<endl;
-        Info<<"Mesh omega was "<<omega_;
+        Info<<"Limiting angle"<<endl;// from "<<angle<<" to "<<anglemin_<<" (rad)"<<endl;
+        //Info<<"Mesh omega was "<<omega_;
         omega_ = (anglemin_ - oldangle_)/dt;
         angle = anglemin_;
-        Info<<" (rad/s). Corrected mesh omega is "<<omega_<<"(rad/s)"<<endl;
+        //Info<<" (rad/s). Corrected mesh omega is "<<omega_<<"(rad/s)"<<endl;
     }
     //scalar signo(sign(-error_));
     //Info<< "signo es: "<<signo<<endl;
     // MOVEMENT BASED ON CALCULATED OMEGA
-    angle = angle0_ + angle ;//+ omega_*dt;
+    //angle = angle0_ + angle ;//+ omega_*dt;
     //auxangle_ = angle0_ + omega_*t.value();  //amplitude_*sin(omega_*t.value());
     vector axisHat = axis_/mag(axis_);
     vectorField p0Rel(p0_ - origin_);
@@ -442,7 +458,7 @@ void PIDangularDisplacementPointPatchVectorField::write
     os.writeEntry("amplitude", amplitude_);
     os.writeEntry("omega", omega_);
     os.writeEntry("omegamin", omegamin_);
-    //p0_.writeEntry("p0", os);
+    p0_.writeEntry("p0", os);
     os.writeEntry("P",P_);
     os.writeEntry("I",I_);
     os.writeEntry("D",D_);
@@ -458,7 +474,7 @@ IOdictionary PIDangularDisplacementPointPatchVectorField::readControl()
             "PIDcontrolDict",
             this->internalField().mesh().time().system(),
             this->internalField().mesh()(),
-            IOobject::MUST_READ_IF_MODIFIED,
+            IOobject::MUST_READ,   // PENDING TO WORK ON A VARIABLE OR PRESCRIBED SETPOINT 
             IOobject::AUTO_WRITE
         )
     );
@@ -472,15 +488,14 @@ void PIDangularDisplacementPointPatchVectorField::report
     Ostream& os
 ) const
 {
-    os.writeEntry("oldOmega", oldOmega_);
-    os.writeEntry("omega", omega_);
+    os.writeEntry("Raw omega", rawomega_);
+    os.writeEntry("Raw angle",rawangle_);
+    os.writeEntry("Saturated omega", omega_);
+    os.writeEntry("Saturated angle", angle);
     os.writeEntry("error", error_);
     os.writeEntry("errorIntegral", errorIntegral_);
     os.writeEntry("errorDifferential",errorDifferential_);
-    
-    //os.writeEntry("omegamin", omegamin_);
-    //os.writeEntry("auxangle", auxangle_);
-    os.writeEntry("angle", angle);
+
     return;
 }
 

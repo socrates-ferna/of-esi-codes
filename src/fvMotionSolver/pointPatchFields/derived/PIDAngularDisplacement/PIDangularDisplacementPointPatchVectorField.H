@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2011-2016 OpenFOAM Foundation
+    Author: Socrates Fernandez
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -67,6 +67,7 @@ class PIDangularDisplacementPointPatchVectorField
         scalar P_;
         scalar I_;
         scalar D_;
+        scalar controlDelay_;
 
         // needed vars
         scalar error_=0;
@@ -78,15 +79,17 @@ class PIDangularDisplacementPointPatchVectorField
         label  timeIndex_=0;
         scalar oldangle_=0;
         scalar angle=0;
+        scalar rawangle_=0;
+        scalar rawomega_=0;
 
-        int controlTarget_;
+        int controlTarget_;  // should be label type
         wordList patches_;
         dictionary forcesDict_;
         scalar setPoint_=-0.35;
         label direction_;
         scalar delay_;
         List<scalar> mycoefs;
-        Vector<scalar> myForce;
+        Vector<scalar> myForce; // do I need it to be a Vector (dimensioned)?
 
         //actuator limits
         scalar anglemax_;

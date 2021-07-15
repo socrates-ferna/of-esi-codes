@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) YEAR AUTHOR, AFFILIATION
+    Author: Socrates Fernandez
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.

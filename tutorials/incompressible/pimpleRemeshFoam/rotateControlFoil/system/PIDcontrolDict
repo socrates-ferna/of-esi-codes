@@ -21,8 +21,8 @@ PIDcontroller
     P               -0.3097;
     I               -0.4533;
     D               0;
-    controlDelay    0.1;
-    actuatorModel   linear;
+    controlDelay    ;
+    actuatorModel   linear;  // useless for the  moment
     actuatorModelCoeffs
     {
         // Remember sign criteria is positive counterclockwise
