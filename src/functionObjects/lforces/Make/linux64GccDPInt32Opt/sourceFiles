@@ -1,5 +1,0 @@
-SOURCE = \
-lforces/lforces.C \
-lforceCoeffs/lforceCoeffs.C \
-
-# sources
