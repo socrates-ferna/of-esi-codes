@@ -21,33 +21,45 @@ PIDcontroller
     P               -0.3097;
     I               -0.4533;
     D               0;
-    controlDelay    ;
-    actuatorModel   linear;  // useless for the  moment
+    controlDelay    3;
+    actuatorModel   linear;
     actuatorModelCoeffs
     {
-        // Remember sign criteria is positive counterclockwise
-        angleMax    #calc "20*constant::mathematical::pi/180";
-        angleMin    #calc "-20*constant::mathematical::pi/180";
-        omegaMax    #calc "20*constant::mathematical::pi/180";
-        omegaMin    #calc "-20*constant::mathematical::pi/180";
+        angleMax        0.349066;
+        angleMin        -0.349066;
+        omegaMax        0.349066;
+        omegaMin        -0.349066;
     }
     controlTarget   1;
     controlledVarData
     {
-        type            lforceCoeffs;
+        type            lforces;
         libs            ( lforces );
         patches         ( airfoil );
         rho             rhoInf;
         rhoInf          1;
         CofR            ( 0.25 0 0 );
-        liftDir         ( -0.2 0.5 0 );
-        dragDir         ( 0.5 0.2 0 );
+        //liftDir         ( 0 1 0 );
+        liftDir         (-0.2 0.5 0);
+        dragDir         (0.5 0.2 0);
+        //dragDir         ( 1 0 0 );
         pitchAxis       ( 0 0 1 );
         magUInf         1;
         lRef            1;
         Aref            1;
         direction       0;
         setPoint        0.7;
+        initialValue    0.0;
+    }
+
+    rollingAverage
+    {
+        type            average;
+        functionObject  forceCoeffs;
+        fields          (Cl Cd);
+        tolerance       0.001;
+        window          0.01; // this is the only used value. The rest of the dictionary is not needed. Might delete soon :P
+        windowType      exact;
     }
 }
 

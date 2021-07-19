@@ -1,2 +1,5 @@
 .vscode/
-
+*.png
+scripts/
+scripts/*
+platforms/*

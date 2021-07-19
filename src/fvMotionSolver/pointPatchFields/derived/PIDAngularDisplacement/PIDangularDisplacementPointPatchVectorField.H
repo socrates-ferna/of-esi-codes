@@ -83,11 +83,11 @@ class PIDangularDisplacementPointPatchVectorField
         scalar rawomega_=0;
 
         int controlTarget_;  // should be label type
-        wordList patches_;
+        wordList patches_; // did I declare this?
         dictionary forcesDict_;
+        //functionObjects::lforceCoeffs fc_d;
         scalar setPoint_=-0.35;
         label direction_;
-        scalar delay_;
         List<scalar> mycoefs;
         Vector<scalar> myForce; // do I need it to be a Vector (dimensioned)?
 
@@ -96,6 +96,12 @@ class PIDangularDisplacementPointPatchVectorField
         scalar anglemin_;
         scalar omegamax_;
         scalar omegamin_;
+        word controlString_="(Cl)";
+
+        //averaging variables
+        scalar meanValue_;
+        dictionary averageDict_;
+        scalar window_;
 
         //functionObjects::forceCoeffs fc;
 
@@ -194,7 +200,13 @@ public:
 
             IOdictionary readControl();
 
+            word controlString
+            (
+                const dictionary&,
+                label
+            );
 
+            void rollavg(scalar currentValue, dictionary& dict, const scalar& dt);
 
         //- Write
         void report(Ostream&) const;

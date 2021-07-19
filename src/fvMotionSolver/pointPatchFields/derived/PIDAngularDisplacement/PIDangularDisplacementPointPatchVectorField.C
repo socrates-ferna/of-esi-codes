@@ -62,6 +62,7 @@ PIDangularDisplacementPointPatchVectorField
     controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("controlDelay",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
+    //fc_d("forceCoeffs",db().time(),forcesDict_),
     setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
     direction_(forcesDict_.getOrDefault<scalar>("direction",3)),
     mycoefs(6,Zero),
@@ -69,7 +70,11 @@ PIDangularDisplacementPointPatchVectorField
     anglemax_(Foam::constant::mathematical::pi),
     anglemin_(-1*Foam::constant::mathematical::pi),
     omegamax_(this->anglemax_),
-    omegamin_(this->anglemin_)
+    omegamin_(this->anglemin_),
+    controlString_(this->controlString(forcesDict_,controlTarget_)),
+    meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
+    averageDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("rollingAverage")),
+    window_(averageDict_.getOrDefault<scalar>("window",0.01))
 {}
 
 
@@ -94,6 +99,7 @@ PIDangularDisplacementPointPatchVectorField
     controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("controlDelay",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
+    //fc_d("forceCoeffs",db().time(),forcesDict_),
     setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
     direction_(forcesDict_.getOrDefault<label>("direction",3)),
     mycoefs(6,Zero),
@@ -101,7 +107,11 @@ PIDangularDisplacementPointPatchVectorField
     anglemax_(Foam::constant::mathematical::pi),
     anglemin_(-1*Foam::constant::mathematical::pi),
     omegamax_(this->anglemax_),
-    omegamin_(this->anglemin_)
+    omegamin_(this->anglemin_),
+    controlString_(this->controlString(forcesDict_,controlTarget_)),
+    meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
+    averageDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("rollingAverage")),
+    window_(averageDict_.getOrDefault<scalar>("window",0.01))
 {
     if (!dict.found("value"))
     {
@@ -116,10 +126,7 @@ PIDangularDisplacementPointPatchVectorField
     {
         p0_ = p.localPoints();
     }
-    //PIDcontrolDict_ = readControl();
-    // esto no lo lee el hijoputa
-    //Info<<"AQUI TAMPOCO?"<<endl;
-    //PIDcontrolDict_.
+
     Info<<"P: "<<P_<<endl;
     Info<<"I: "<<I_<<endl;
     Info<<"D: "<<D_<<endl;
@@ -164,6 +171,7 @@ PIDangularDisplacementPointPatchVectorField
     controlDelay_(ptf.controlDelay_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
+    //fc_d(ptf.fc_d),
     setPoint_(ptf.setPoint_),
     direction_(ptf.direction_),
     mycoefs(6,Zero),
@@ -171,7 +179,11 @@ PIDangularDisplacementPointPatchVectorField
     anglemax_(ptf.anglemax_),
     anglemin_(ptf.anglemin_),
     omegamax_(ptf.omegamax_),
-    omegamin_(ptf.omegamin_)
+    omegamin_(ptf.omegamin_),
+    controlString_(ptf.controlString_),
+    meanValue_(ptf.meanValue_),
+    averageDict_(ptf.averageDict_),
+    window_(ptf.window_)
 {}
 
 
@@ -196,6 +208,7 @@ PIDangularDisplacementPointPatchVectorField
     controlDelay_(ptf.controlDelay_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
+    //fc_d(ptf.fc_d),
     setPoint_(ptf.setPoint_),
     direction_(ptf.direction_),
     mycoefs(6,Zero),
@@ -203,7 +216,11 @@ PIDangularDisplacementPointPatchVectorField
     anglemax_(ptf.anglemax_),
     anglemin_(ptf.anglemin_),
     omegamax_(ptf.omegamax_),
-    omegamin_(ptf.omegamin_)
+    omegamin_(ptf.omegamin_),
+    controlString_(ptf.controlString_),
+    meanValue_(ptf.meanValue_),
+    averageDict_(ptf.averageDict_),
+    window_(ptf.window_)
 {}
 
 
@@ -248,11 +265,16 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
     // PENDING TO DECLARE CONTROLDELAY VAR
     if (t.value() < controlDelay_)
     {
+        if (timeIndex_!=t.timeIndex())
+        {
+            timeIndex_=t.timeIndex();
+        }
         angle = angle0_ + omega_*t.value();
         vector axisHat = axis_/mag(axis_);
         vectorField p0Rel(p0_ - origin_);
         // report calculated angles
         Info<<"Control not activated yet"<<endl;
+        Info<<"Time index: "<< t.timeIndex()<<endl;
         report(Info);
         vectorField::operator=
         (
@@ -277,20 +299,23 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldangle_ = angle;
     }
 
-    FIFOStack<scalar> windowTimes; // work in progress
+    //FIFOStack<scalar> windowTimes; // work in progress
 
     //functionObjects::lforces f("forces",t,forcesDict_,true);
     functionObjects::lforceCoeffs fc("forceCoeffs",t,forcesDict_,true);
 
     switch (controlTarget_) {
         case 0:
-            // not implemented yet
-            
-            //functionObjects::forces f("forces", mesh, forcesDict_);
-            fc.calcForcesMoment();
 
-            myForce = fc.forceEff(); // THIS IS STILL PENDING
-            error_ = setPoint_ - myForce.x(); // this should choose x,y,z according to direction
+            fc.calcForcesMoment();
+            //fc_d.calcForcesMoment();
+            myForce = fc.forceEff(); // FUNCTION from lforces Class RETURNS ROTATED FORCE
+            //vector myForce_2(fc_d.forceEff);
+            //vector checkforce(myForce-myForce_2);
+            //Info<<"Subtracted Force"<<endl;
+            rollavg(myForce[direction_],averageDict_,dt); //rolling Average with FIFOStack class
+            Info<<"meanValue out from function is: "<<meanValue_<<endl;
+            error_ = setPoint_ - meanValue_; // this should choose x,y,z according to direction
 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
             errorDifferential_ = (error_ - oldError_)/dt;
@@ -298,64 +323,32 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
             omega_ = (angle - oldangle_)/dt;
 
-            Info<< "Controlled variable (Lift) : "<< myForce[2]<<endl;
-            //Info<< "dir1 force is: "<< myForce.x() <<endl;
-            /*
-            Info<< "comp0 force is: "<< myForce.component(0) <<endl;
-            Info<< "comp1 force is: "<< myForce.component(1) <<endl;
-            Info<< "comp2 force is: "<< myForce.component(2) <<endl;
-            */
-            Info<< "target force is: "<< setPoint_ <<endl;
-            //Info<< "e1:"<< f.coordSys_.e1()<<endl; NO VALE PORQUE SON PRIVADAS
-            //Info<< "e2:"<< f.coordSys_.e2()<<endl;
-            //Info<< "e3:"<< f.coordSys_.e3()<<endl;
+            Info<< "Controlled variable"<<controlString_<<" : "<< myForce[2]<<endl;
+            //Info<< "target force is: "<< setPoint_ <<endl;
 
         break;
 
-        case 1:  // PUEDO ACCEDER AL OBJETO YA CREADO POR PIMPLE?
-            // not implemented yet
+        case 1:  // PUEDO ACCEDER AL OBJETO YA CREADO POR PIMPLE? Sí pero aquí no conviene, mejor independencia
 
-            // IMPLEMENT YOUR OWN FORCECOEFFS OR SIMPLY CALL EXECUTE?
-            //Info<<"forceCoeffs"<<endl;
-            //fc.calcForcesMoment();
             fc.calcrot();
+            //fc_d.calcrot();
             mycoefs = fc.coefList;
+            //List<scalar> mycoefs_2(fc_d.coefList);
+            //List<scalar> 
             //Info<<"Cd"<< mycoefs[0]<<endl;
             //Info<<"Cs"<< mycoefs[1]<<endl;
-            Info<<"Controlled Variable (Cl): "<< mycoefs[2]<<endl;
+            rollavg(mycoefs[direction_], averageDict_,dt);
+            Info<<"Controlled Variable "<<controlString_<<": "<< meanValue_<<endl;
             //Info<<"CmRoll"<< mycoefs[3]<<endl;
             //Info<<"CmPitch"<< mycoefs[4]<<endl;
             //Info<<"CmYaw"<< mycoefs[5]<<endl;
 
-            error_ = setPoint_ - mycoefs[2]; // pending option to choose other coeffs than Cl
+            error_ = setPoint_ - meanValue_; // pending option to choose other coeffs than Cl
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
             errorDifferential_ = (error_ - oldError_)/dt;
             angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
             omega_ = (angle - oldangle_)/dt; 
 
-            
-
-            //fc.execute();
-            /*
-            Info<< "COEFStotalForce is: "<< myForce<<endl;
-            Info<< "COEFSdir1 force is: "<< myForce.x() <<endl;
-            Info<< "target force is: "<< setPoint_ <<endl;
-            */
-            /*
-            f.calcForcesMoment();
-            
-            List<Field<scalar>> liftCoeffs(3);
-            scalar ClTot = 0;
-
-            const scalar pDyn = f.rhoRef_*sqr(f.maUInf_); // this won't work, private data members
-
-            const scalar forceScaling = 1.0/(Aref_*pDyn + SMALL);
-
-            forAll(liftCoeffs, i)
-            {
-                const Field<vector> localForce(f.coordSys_.localVector(myForce[i]));
-            }
-            */
             break;
 
         case 2:
@@ -483,6 +476,115 @@ IOdictionary PIDangularDisplacementPointPatchVectorField::readControl()
     return readdict;
 }
 
+// Determine control variable string to output during execution
+word PIDangularDisplacementPointPatchVectorField::controlString(const dictionary& dict,label controlTarget)
+{
+        wordList forceStrings(3);
+        wordList forceCoeffStrings(3);
+        forceStrings[0] = "Drag Force";
+        forceStrings[1] = "Side Force";
+        forceStrings[2] = "Lift Force";
+        forceCoeffStrings[0] = "Cd";
+        forceCoeffStrings[1] = "Cs";
+        forceCoeffStrings[2] = "Cl";
+        word controlString = "Cl";
+
+        label direction = dict.getOrDefault<int>("direction",2);
+
+        if (controlTarget == 0)
+        {
+            controlString = forceStrings[direction];
+        }
+        else if (controlTarget == 1)
+        {
+            controlString = forceCoeffStrings[direction];
+        }
+        else
+        {
+            controlString = "angle";
+        }
+
+        return controlString;
+}
+
+// CURRENTLY ONLY AVAILABLE FOR SCALARS. 
+//IDEAL WOULD BE TO IMITATE TEMPLATED FUNCTION AS IN 
+//averageConditionTemplates.C
+void PIDangularDisplacementPointPatchVectorField::rollavg
+(
+    scalar currentValue,
+    dictionary& dict,
+    const scalar& dt
+)
+{
+    FIFOStack<scalar> windowTimes;
+    FIFOStack<scalar> windowValues;
+
+    dict.readIfPresent("windowTimes",windowTimes);
+    dict.readIfPresent("windowValues",windowValues);
+
+    for (scalar& dti : windowTimes) //if windowTimes empty will be zero?
+    {
+        dti += dt; //increase value of all elements by dt
+    }
+
+    bool removeValue = true;
+    // check if values in stack have reached the window
+    while (removeValue && windowTimes.size())
+    {
+        removeValue = windowTimes.first() > window_;
+
+        if (removeValue)
+        {
+            windowTimes.pop();
+            windowValues.pop();
+        }
+    }
+
+    // Add the current value. Up to here nothing must have happenned if it's empty
+    windowTimes.push(dt);
+    windowValues.push(currentValue);
+    
+    // Define iterators Calculate the average
+    auto timeIter = windowTimes.cbegin();
+    auto valueIter = windowValues.cbegin();
+
+    scalar meanValue = 0; // pTraits<Type>::zero in averageConditionTemplates.C
+    scalar valueOld(0);
+
+    for
+    (
+        label i = 0;
+        timeIter.good();
+        ++i,++timeIter,++valueIter
+    )
+    {
+        const scalar& value = valueIter();
+        const scalar dt = timeIter();
+
+        meanValue += dt*value;
+
+        if(i){ meanValue -= dt*valueOld;}
+
+        valueOld = value;
+    }
+
+    meanValue /= windowTimes.first();
+
+    // Store the state informtion for the next call
+    dict.set("windowTimes",windowTimes);
+    dict.set("windowValues",windowValues);
+
+    meanValue_ = meanValue;
+    scalar delta = meanValue - currentValue;
+    
+    Info<<"meanValue is: "<<meanValue_<<"  Delta is: "<<delta<<endl;
+    /*
+    Info<<"FIFO Window Times "<<windowTimes<<endl;
+    Info<<"FIFO Window Values"<<windowValues<<endl;
+    */
+
+}
 void PIDangularDisplacementPointPatchVectorField::report
 (
     Ostream& os
