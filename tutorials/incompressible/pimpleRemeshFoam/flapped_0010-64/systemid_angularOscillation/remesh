@@ -1,0 +1,36 @@
+#/bin/bash
+if [ -z "$FOAM_RUN" ]
+then 
+
+echo "locally sourcing OpenFOAM"
+of2012
+
+fi
+
+instants=$(foamListTimes)
+
+echo $instants
+
+for inst in $instants; do
+
+echo "$inst"
+sed -i "s/polyMeshDir=.*/polyMeshDir=$inst\/polyMesh/" parameters.dat
+
+#cat parameters.dat
+
+done
+
+echo "echoing inst $inst"
+lastAngle=$(tail -n 200 log.testMapFields | grep --line-buffered 'Saturated angle' | cut -d' ' -f3 | tr -d ';')
+lastAngle=$(bc -l <<<"${lastAngle}*180/3.141592")
+echo "$lastAngle degrees"
+
+sed -i "s/rotateAngle=.*/rotateAngle=$lastAngle/" parameters.dat
+
+echo "REMESHING WITH THIS PARAMETER FILE"
+echo "----------------------------------"
+cat parameters.dat
+
+pointwise -b meshUnstructuredRotate.glf parameters.dat
+
+cp -rT "$inst"/polyMesh constant/polyMesh

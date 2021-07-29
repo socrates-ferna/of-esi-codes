@@ -81,6 +81,7 @@ Note
 #include "pimpleControl.H"
 #include "CorrectPhi.H"
 #include "fvOptions.H"
+#include "mapFields.H"
 //#include "IOdictionary.H"
 //#include "argList.H"
 
@@ -111,23 +112,7 @@ int main(int argc, char *argv[])
     #include "createUfIfPresent.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
-/*
-    if (args.found("parallel"))
-    {
-        label n = 0;
-        //label n = Pstream::nProcs(worldComm);
-        Info << "Running on parallel on " << n << "processes"<< endl;
-    }
 
-    if (Pstream::parRun())
-    {
-        Info << "esta forma tb funciona"<< endl;
-    }
-    if (Pstream::master())
-    {
-        Info << "I am the master process"<< endl;
-    }
-*/
     turbulence->validate();
 
     //label nFailedChecks = 0;
@@ -171,6 +156,19 @@ int main(int argc, char *argv[])
             IOobject::NO_WRITE
         )
     );
+
+    IOdictionary myMapDict
+    (
+        IOobject
+        (
+            "mymapFieldsDict",
+            mesh.time().system(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        )
+    );
+
     //Info<<remeshDict.get<wordRes>("options")<<endl; // crashes bc of -b option
     string remeshCommand;
     string mesher(remeshDict.getOrDefault<word>("mesher","snappyHexMesh"));
@@ -183,9 +181,11 @@ int main(int argc, char *argv[])
     string op3(remeshDict.getOrDefault<word>("option3",""));
     remeshCommand = language+ " " + script+ " " + logFile+ " " + mesher+ " " + op1+ " " + op2+ " " + op3;
     Info<<"Remesh command is: "<<remeshCommand<<endl;
-    Info<< "Test call"<<endl;
-    system(remeshCommand);
 
+    scalar remeshPeriod(remeshDict.getOrDefault<scalar>("remeshPeriod",0.01));
+
+
+    
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
@@ -248,63 +248,123 @@ int main(int argc, char *argv[])
         //nFailedChecks = checkMeshQuality(mesh, qualDict(), surfWriter);
         //mesh check based on 2 conditions:
         //1. Every 0.1s
-        if (lastMeshCheck > 0.1)
+        
+        if (lastMeshCheck > remeshPeriod)
         {
+            //mesh.setAspectThreshold(100000);
             failedChecks = mesh.checkMesh(true);
             if (failedChecks)
             {
+                Info<<"creating IOobject"<<endl;
+                IOobject oMesh
+                (
+                    "copyMesh",
+                    runTime.timeName(), 
+                    runTime,
+                    Foam::IOobject::NO_READ,
+                    Foam::IOobject::AUTO_WRITE
+                );
+
+                Info<<"creating auxiliary mesh"<<endl;
+
+
+                fvMesh auxMesh
+                (
+                    oMesh,
+                    pointField(mesh.points()),
+                    faceList(mesh.faces()),
+                    cellList(mesh.cells()),
+                    true
+                );
+                
+                const polyBoundaryMesh& patches = mesh.boundaryMesh();
+
+                List<polyPatch*> p(patches.size());
+
+                forAll(p,patchi)
+                {
+                    p[patchi] = patches[patchi].clone(auxMesh.boundaryMesh()).ptr();
+                }
+
+                auxMesh.addFvPatches(p);
+
+                
+                //List<polyPatch*> mypatches = mesh.boundary();
+                //auxMesh.addFvPatches(mesh.boundaryMesh(),true);
+                auxMesh.write();
+                //mesh.resetMotion();
+                mesh.write(); // esto me da el problema
+                //mesh.destr
+
+                Info<<"Creating mapFields Object with the following dict:"<<endl;
+                Info<<myMapDict.subDict("origToCopy")<<endl;
+                functionObjects::mapFields myMapFields("oToCopy",runTime,myMapDict.subDict("origToCopy"));
+
+                myMapFields.execute();
+                myMapFields.write();
+
                 if(Pstream::parRun())
                 {
                     if(Pstream::master())
                     {
                         //call remeshing routine
-                        system(remeshCommand);
-                
-                        //call mapFields
-                        system("mapFields -case ../aux_case -consistent -sourceTime latestTime .");
-                        //missing angle position for correct remeshing and mapFieldsDict for cuttingPatches
-                    }
+                        system("bash remesh");
+                        //system("pointwise -b meshUnstructured.glf parameters.dat"); // let's say it writes the mesh to ../aux_case
+
+                                            }
                 }
                 else
                 {
-                    system(remeshCommand);
-                    system("mapFields -case ../aux_case -consistent -sourceTime latestTime .");
+                    system("bash remesh");
+                    //system("pointwise -b meshUnstructured.glf parameters.dat");
                 }
+
+                
+                //system("pointwise -b meshUnstructured.glf parameters.dat");
+                Info<<args.args()<<endl;
+                Info<<args.rootPath()<<args.caseName()<<endl;
+                //mesh.~dynamicFvMesh();
+                //runTime.readIfModified();
+                //runTime.readModifiedObjects();
+                Info<<"MES SIZE"<<mesh.nCells();
+                
+                Info<< "RECREATING MESH"<<endl;
+                
+                autoPtr<dynamicFvMesh> meshPtr(dynamicFvMesh::New(args,runTime));
+
+                dynamicFvMesh& mesh = meshPtr();
+                
+
+
+                //mesh.write();
+                //mesh.update();
+                
+
+                //#include "createDynamicFvMesh.H"
+
+                functionObjects::mapFields backMapFields("copyMesh",runTime,myMapDict.subDict("copyToNew"));
+
+                backMapFields.execute();
+                backMapFields.write();
+
+                auxMesh.~fvMesh();
+
+
+
+
+                // build mesh in aux_case
+                // map to that mesh with meshToMesh class
+                // "substitute" my current mesh with the mesh built from aux_case
+                // map back from aux_case to the current mesh (which is identical to aux_case)
+
+
+
                 //reset failedChecks
                 failedChecks = false;
             }
             lastMeshCheck = 0.0;
         }
         
-        //determine whether remesh is necesary
-        //build a mapPolyMesh object
-        //remesh
-        //mapFields
-        /*Info<< "\n Failed " << failedChecks << " mesh checks. \n"<< endl;
-        if (failedChecks > 0)
-        {
-            Info<< "\nCalling remesh routine.\n"<< endl;
-            //system("pointwise -b meshUnstructured.glf parameters.dat");
-        }
-        */
-        //mesh.readIfModified();
-        //runTime.lookupObject()
-        
-        //system("mapFields -case ../aux_case -consistent -sourceTime latestTime .");
-        
-        //system("mapFields -consistent -sourceTime latestTime ../aux_case");
-        //runTime.readIfModified();
-        //const IOdictionary& dynamicMeshDict = mesh.lookupObject<IOdictionary>("dynamicMeshDict");
-        //Info<< "NAMES "<< mesh.names()<< endl;
-        //Info<< "path: "<< dynamicMeshDict.filePath()<< endl;
-        //Info<< "dynamicMeshDict modified: "<< dynamicMeshDict.modified()<< endl;
-        //static_cast<Foam::IOdictionary>(pdisp).write(Info,true);
-        //word myname = "forceCoeffs";
-        //pdisp.writeData(Info);
-        //functionObjectList runTime.functionObjects(myList);
-        //Info<< myList.get << endl;
-        //bool test = runTime.foundObject<functionObject>(myname);
-        //Info<< test <<endl;
         runTime.write();
         runTime.printExecutionTime(Info);
     }

@@ -1,0 +1,278 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      changeDictionaryDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+U
+{
+internalField uniform ($Ux $Uy 0);
+boundaryField
+{
+
+    freestream
+    {
+        type            freestreamVelocity;
+        freestreamValue $internalField;
+    }
+    "main|flap"
+    {
+        type            noSlip;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+p
+{
+internalField   uniform 0;
+
+boundaryField
+{
+    freestream
+    {
+        type            freestreamPressure;
+        freestreamValue $internalField;
+    }
+    "main|flap"
+    {
+        type            zeroGradient;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+omega
+{
+internalField   uniform $omega;
+
+boundaryField
+{
+    freestream
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "main|flap"
+    {
+        type            omegaWallFunction;
+        value           $internalField;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+ReThetat
+{
+internalField   uniform $ReTheta;
+
+boundaryField
+{
+    freestream
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "main|flap"
+    {
+        type            zeroGradient;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+nuTilda
+{
+internalField   uniform 2e-04;
+
+boundaryField
+{
+    freestream
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "main|flap"
+    {
+        type            fixedValue;
+        value           uniform 5e-07;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+nut
+{
+internalField   uniform $nut;
+
+boundaryField
+{
+    freestream
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "main|flap"
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+kt
+{
+internalField   uniform 3.7500000000000006e-11;
+
+boundaryField
+{
+    freestream
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "main|flap"
+    {
+        type            fixedValue;
+        value           uniform 3.7500000000000006e-11;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+kl
+{
+internalField   uniform 0;
+
+boundaryField
+{
+    freestream
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "main|flap"
+    {
+        type            fixedValue;
+        value           uniform 0;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+k
+{
+internalField   uniform $k;
+
+boundaryField
+{
+    freestream
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "main|flap"
+    {
+        type            fixedValue;
+        value           uniform 0;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+
+gammaInt
+{
+internalField   uniform 1;
+
+boundaryField
+{
+    freestream
+    {
+        type            fixedValue;
+        value           $internalField;
+    }
+    "main|flap"
+    {
+        type            zeroGradient;
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+
+pointDisplacement
+{
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    flap
+    {
+        type            angularOscillatingDisplacement;
+        axis            ( 0 0 1 );
+        origin          ( 0.5828 0 0 );
+        angle0          0;
+        amplitudeAngle	15;// #calc "constant::mathematical::pi * $amplitudeAngle / 180";
+        amplitude       #calc "constant::mathematical::pi * $amplitudeAngle / 180";
+        omega           0;
+        value           uniform ( 0 0 0 );
+    }
+    freestream
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+    main
+    {
+        type            fixedValue;
+        value           uniform (0 0 0);
+    }
+    BaseAndTop
+    {
+        type            empty;
+    }
+}
+}
+// ************************************************************************* //

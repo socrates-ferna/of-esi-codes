@@ -3,3 +3,7 @@
 scripts/
 scripts/*
 platforms/*
+.ipy*
+*.o*
+log.*
+pyScripts/log.*

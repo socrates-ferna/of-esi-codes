@@ -1,0 +1,95 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    p
+    {
+        solver           GAMG;
+        smoother         FDIC;
+        tolerance        1e-08;
+        relTol           0.01;
+    }
+
+    pFinal
+    {
+        $p;
+        relTol           0;
+    }
+
+    "(U|k|omega|epsilon|nuTilda|q|zeta|ReThetat|gammaInt|kl|kt|R)"
+    {
+        solver           PBiCGStab;
+        preconditioner   DILU;
+        tolerance        1e-08;
+        relTol           0.01;
+    }
+
+    "(UFinal|kFinal|omegaFinal|epsilonFinal|nuTildaFinal|qFinal|ReThetatFinal|gammaIntFinal|klFinal|ktFinal|RFinal)"
+    {
+        $U;
+        relTol           0;
+    }
+}
+
+"(SIMPLE|PISO)"
+{
+    consistent                 yes;
+    nCorrectors                2;
+    nNonOrthogonalCorrectors   2;
+    pRefCell                   0;
+    pRefValue                  0;
+
+    residualControl
+    {
+        U         1e-6;
+        p         1e-5;
+        k         0.0001;
+        omega     0.0001;
+        epsilon   0.0001;
+        nuTilda   0.0001;
+        Rethetat  0.0001;
+        gammaInt  0.0001;
+        kl        0.0001;
+        kt        0.0001;
+        R         0.0001;
+    }
+}
+
+relaxationFactors
+{
+    fields
+    {
+        p         0.6;
+    }
+
+    equations
+    {
+        U         0.8;
+        k         0.6;
+        omega     0.6;
+        epsilon   0.6;
+        nuTilda   0.6;
+        ReThetat  0.6;
+        gammaInt  0.6;
+        kl        0.6;
+        kt        0.6;
+        R         1;
+    }
+}
+
+// ************************************************************************* //

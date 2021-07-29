@@ -1,0 +1,46 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      mapFieldsDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+origToCopy
+{
+    // Mandatory entries (unmodifiable)
+    type        mapFields;
+    libs        (fieldFunctionObjects);
+
+    // Mandatory (inherited) entries (runtime modifiable)
+    fields      (U p k epsilon nut nuTilda omega epsilon);
+    mapRegion   copyMesh;
+    mapMethod   cellVolumeWeight;
+    consistent  true;
+}
+copyToNew
+{
+    // Mandatory entries (unmodifiable)
+    type        mapFields;
+    libs        (fieldFunctionObjects);
+
+    // Mandatory (inherited) entries (runtime modifiable)
+    fields      (U p k epsilon nut nuTilda omega epsilon);
+    mapRegion   region0; //polyMesh?
+    mapMethod   cellVolumeWeight;
+    consistent  true;
+}
+//patchMap ();
+
+//cuttingPatches ();
+
+
+// ************************************************************************* //

@@ -92,6 +92,7 @@ PIDangularDisplacementPointPatchVectorField
     angle0_(dict.get<scalar>("angle0")),
     amplitude_(dict.get<scalar>("amplitude")),
     omega_(dict.get<scalar>("omega")),
+    p0_(p.localPoints()),
     PIDcontrolDict_(this->readControl()),
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
@@ -117,16 +118,19 @@ PIDangularDisplacementPointPatchVectorField
     {
         updateCoeffs();
     }
-
+    /*
     if (dict.found("p0"))
     {
         p0_ = vectorField("p0", dict , p.size());
+        angle0_ = dict.get<scalar>("angle");
+        Info<< "RESETTING ANGLE: "<< angle0_<<endl;
     }
     else
     {
         p0_ = p.localPoints();
     }
-
+    */
+    p0_ = p.localPoints();
     Info<<"P: "<<P_<<endl;
     Info<<"I: "<<I_<<endl;
     Info<<"D: "<<D_<<endl;
@@ -262,7 +266,6 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
     const polyMesh& mesh = this->internalField().mesh()();
     const Time& t = mesh.time();
-    // PENDING TO DECLARE CONTROLDELAY VAR
     if (t.value() < controlDelay_)
     {
         if (timeIndex_!=t.timeIndex())
@@ -299,9 +302,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldangle_ = angle;
     }
 
-    //FIFOStack<scalar> windowTimes; // work in progress
 
-    //functionObjects::lforces f("forces",t,forcesDict_,true);
     functionObjects::lforceCoeffs fc("forceCoeffs",t,forcesDict_,true);
 
     switch (controlTarget_) {
