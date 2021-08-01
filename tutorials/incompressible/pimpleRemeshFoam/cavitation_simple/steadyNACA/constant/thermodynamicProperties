@@ -1,0 +1,32 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      thermodynamicProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+barotropicCompressibilityModel linear; // Couples density and pressure
+
+psiv            2.5e-06;  // Compressibility of vapour phase. Compressibility is inverse of squared speed of sound 
+
+rholSat         998.21;      // density of vapour at saturation point
+
+rhovSat         0.01703;
+
+psil            6.747e-4;    // c=1482.76  Compressibility of liquid phase
+
+pSat            2300;     // saturation pressure
+
+rhoMin          0.001; 
+
+// ************************************************************************* //

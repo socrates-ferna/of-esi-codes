@@ -1,0 +1,67 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2006                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// input parameters
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// Reynolds number
+Re              1000000.0;
+
+// viscosity
+nu              1e-06;
+
+// angle of attack
+AOA             5.0;
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// constant parameters (do not change)
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// freestream turbulent intensity
+TI              0.005;
+
+// characteristic length scale
+L               1.0;
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// calculated parameters
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+// velocity magnitude
+Umag            #calc "$Re*$nu/$L";
+
+// x-velocity component
+Ux              #calc "$Umag*std::cos($AOA*3.1415/180.0)";
+
+// x-velocity component
+Uy              #calc "$Umag*std::sin($AOA*3.1415/180.0)";
+
+// boundary layer thickness (approximate)
+delta           #calc "0.37*$L/(std::pow($Re,0.2))";
+
+// integral length scale (approximate)
+l               #calc "0.4*$delta";
+
+// turbulent kinetic energy
+k               #calc "1.5*std::pow($Umag*$TI,2)";
+
+// turbulent dissipation rate
+epsilon         #calc "0.09*std::pow($k, 1.5)/$l";
+
+// specific turbulent dissipation rate
+omega           #calc "$epsilon/($k*0.09)";
+
+// Reynolds number based on momentum thickness
+ReTheta         #calc "1173.51-589.428*$TI*100.0+0.2196/(std::pow($TI*100.0,2))";
+
+// turbulent viscosity
+nut             #calc "0.09*std::pow($k,2)/$epsilon";
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

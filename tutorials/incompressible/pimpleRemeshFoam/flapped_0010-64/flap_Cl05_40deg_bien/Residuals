@@ -1,0 +1,15 @@
+set multiplot
+set size 0.5, 0.5
+
+set origin 0.0,0.25
+set logscale y
+set title "Residuals"
+set ylabel 'Residual'
+set xlabel 'Time Step'
+plot "< cat log.pimpleDyMOversetFoam | grep 'Solving for Ux' | cut -d' ' -f9 | tr -d ','" title 'Ux' with lines,\
+"< cat log.pimpleDyMOversetFoam | grep 'Solving for Uy' | cut -d' ' -f9 | tr -d ','" title 'Uy' with lines,\
+"< cat log.pimpleDyMOversetFoam | grep 'Solving for p' | cut -d' ' -f9 | sed -n 'p;N;N;N' | tr -d ','" title 'p' with lines,\
+#"< cat OpenFOAM.o1722607 | grep 'Solving for p' | cut -d' ' -f9 | tr -d ','" title 'p' with lines,\
+
+pause 2
+reread

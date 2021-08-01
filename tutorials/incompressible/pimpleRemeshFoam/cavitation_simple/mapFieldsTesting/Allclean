@@ -1,0 +1,7 @@
+# !/bin/sh
+cd "${0%/*}" || exit  # Run from this directory
+# ------------------------------------------------------------------------------
+
+rm -rf 0.[0-9]* [1-9]* log logs postProcessing processor*
+cp -rT ../testing_PID_Cl0.7/constant/polyMesh constant/polyMesh
+# ------------------------------------------------------------------------------

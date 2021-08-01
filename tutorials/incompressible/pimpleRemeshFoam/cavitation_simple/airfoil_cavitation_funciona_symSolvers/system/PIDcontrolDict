@@ -1,0 +1,53 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      PIDcontrolDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+PIDcontroller
+{
+    type            PID;
+    P               0.01;
+    I               0;
+    D               0;
+    controlDelay    0.5;
+    actuatorModel   linear;
+    actuatorModelCoeffs
+    {
+        var1            5;
+        var2            12;
+        var3            3.5;
+    }
+    controlTarget   1;
+    controlledVarData
+    {
+        type            lforceCoeffs;
+        libs            ( lforces );
+        patches         ( airfoil );
+        rho             rhoInf;
+        rhoInf          1;
+        CofR            ( 0.25 0 0 );
+        liftDir         ( -0.2 0.5 0 );
+        dragDir         ( 0.5 0.2 0 );
+        pitchAxis       ( 0 0 1 );
+        magUInf         1;
+        lRef            1;
+        Aref            1;
+        direction       0;
+        setPoint        0.25;
+    }
+}
+
+
+// ************************************************************************* //

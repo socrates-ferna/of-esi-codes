@@ -1,0 +1,6 @@
+*/*.*[1-9]
+testing*
+*/*log*
+*/dynamicCode
+*/postProcessing
+*/constant/polyMesh*

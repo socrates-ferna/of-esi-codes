@@ -255,6 +255,7 @@ int main(int argc, char *argv[])
             failedChecks = mesh.checkMesh(true);
             if (failedChecks)
             {
+                
                 Info<<"creating IOobject"<<endl;
                 IOobject oMesh
                 (
