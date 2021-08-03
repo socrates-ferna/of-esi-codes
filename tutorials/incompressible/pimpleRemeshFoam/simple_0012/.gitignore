@@ -3,3 +3,8 @@ testing*
 */*log*
 */dynamicCode
 */postProcessing
+*testing*
+copymapFields
+test*
+*_[0-9].*
+other

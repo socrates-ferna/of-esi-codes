@@ -170,6 +170,7 @@ int main(int argc, char *argv[])
     );
 
     //Info<<remeshDict.get<wordRes>("options")<<endl; // crashes bc of -b option
+    /*
     string remeshCommand;
     string mesher(remeshDict.getOrDefault<word>("mesher","snappyHexMesh"));
     string language(remeshDict.getOrDefault<word>("language","bash"));
@@ -181,7 +182,7 @@ int main(int argc, char *argv[])
     string op3(remeshDict.getOrDefault<word>("option3",""));
     remeshCommand = language+ " " + script+ " " + logFile+ " " + mesher+ " " + op1+ " " + op2+ " " + op3;
     Info<<"Remesh command is: "<<remeshCommand<<endl;
-
+    */
     scalar remeshPeriod(remeshDict.getOrDefault<scalar>("remeshPeriod",0.01));
 
 
@@ -251,11 +252,13 @@ int main(int argc, char *argv[])
         
         if (lastMeshCheck > remeshPeriod)
         {
-            //mesh.setAspectThreshold(100000);
+            mesh.setAspectThreshold(1e10);
             failedChecks = mesh.checkMesh(true);
             if (failedChecks)
             {
+                runTime.writeAndEnd();
                 
+                /*
                 Info<<"creating IOobject"<<endl;
                 IOobject oMesh
                 (
@@ -288,7 +291,7 @@ int main(int argc, char *argv[])
                 }
 
                 auxMesh.addFvPatches(p);
-
+                
                 
                 //List<polyPatch*> mypatches = mesh.boundary();
                 //auxMesh.addFvPatches(mesh.boundaryMesh(),true);
@@ -303,24 +306,27 @@ int main(int argc, char *argv[])
 
                 myMapFields.execute();
                 myMapFields.write();
-
+                */
+                /*
+                mesh.write();
+                
                 if(Pstream::parRun())
                 {
                     if(Pstream::master())
                     {
                         //call remeshing routine
-                        system("bash remesh");
+                        system("bash remesh_plus_map");
                         //system("pointwise -b meshUnstructured.glf parameters.dat"); // let's say it writes the mesh to ../aux_case
 
                                             }
                 }
                 else
                 {
-                    system("bash remesh");
+                    system("bash remesh_plus_map");
                     //system("pointwise -b meshUnstructured.glf parameters.dat");
                 }
-
-                
+                */
+                /*
                 //system("pointwise -b meshUnstructured.glf parameters.dat");
                 Info<<args.args()<<endl;
                 Info<<args.rootPath()<<args.caseName()<<endl;
@@ -336,11 +342,11 @@ int main(int argc, char *argv[])
                 dynamicFvMesh& mesh = meshPtr();
                 
 
-
+                */
                 //mesh.write();
                 //mesh.update();
                 
-
+/*
                 //#include "createDynamicFvMesh.H"
 
                 functionObjects::mapFields backMapFields("copyMesh",runTime,myMapDict.subDict("copyToNew"));
@@ -350,7 +356,7 @@ int main(int argc, char *argv[])
 
                 auxMesh.~fvMesh();
 
-
+*/
 
 
                 // build mesh in aux_case
@@ -361,7 +367,7 @@ int main(int argc, char *argv[])
 
 
                 //reset failedChecks
-                failedChecks = false;
+                //failedChecks = false;
             }
             lastMeshCheck = 0.0;
         }

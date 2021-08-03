@@ -1,0 +1,74 @@
+#/bin/bash
+if [ -z "$FOAM_RUN" ]
+then 
+
+echo "locally sourcing OpenFOAM"
+of2012
+
+fi
+
+
+if [ -z "$1" ]
+then
+    echo "Log file not passed. Assuming log.pimpleFoam"
+    set -- "log.pimpleFoam" "{@:2}"
+    echo "$1"
+    echo "echoed"
+fi
+
+sourceCase="$(echo $PWD | rev | cut -d'/' -f1 | rev)"
+echo "Source case: $sourceCase"
+otroSource="$PWD"
+
+auxtimes="$(foamListTimes -case ../aux_case)"
+
+for time in $auxtimes; do
+    rm -r ../aux_case/$time
+done
+
+cp -r system ../aux_case
+cp -r constant ../aux_case
+cp -r 0 ../aux_case
+
+instants=$(foamListTimes)
+
+echo $instants
+lastInstant="$(echo $instants | awk -F' ' '{print $NF}')"
+echo "Last Instant is: $lastInstant"
+
+cp -r $lastInstant ../aux_case
+
+#for inst in $instants; do
+
+echo "$lastInstant"
+sed -i "s/polyMeshDir=.*/polyMeshDir=$lastInstant\/polyMesh/" parameters.dat
+
+
+#cat parameters.dat
+
+#done
+
+rm -rf 0.[0-9]* [1-9]* processor*/[1-9]* processor*/0.[0-9]*
+
+mkdir $lastInstant
+
+echo "echoing inst $inst"
+#lastAngle="$(tail -n 200 $1 | grep --line-buffered 'Saturated angle' | cut -d' ' -f3 | tr -d ';')"
+#lastAngle="$(echo $lastAngle | awk -F' ' '{print $NF}')"
+#lastAngle="$(bc -l <<<"${lastAngle}*180/3.141592")"
+lastAngle="0.0"
+echo "$lastAngle degrees"
+
+sed -i "s/rotateAngle=.*/rotateAngle=${lastAngle}/" parameters.dat
+echo "wait for 10s"
+sleep 10
+echo "REMESHING WITH THIS PARAMETER FILE"
+echo "----------------------------------"
+cat parameters.dat
+echo "wait for 10s"
+sleep 10
+pointwise -b meshUnstructuredRotate.glf parameters.dat
+
+cp -rT "$lastInstant"/polyMesh constant/polyMesh
+
+mapFields -consistent -sourceTime latestTime ../aux_case

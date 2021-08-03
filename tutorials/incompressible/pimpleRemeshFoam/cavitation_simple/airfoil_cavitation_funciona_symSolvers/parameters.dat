@@ -11,4 +11,4 @@ startspacing=0.05
 endspacing=1
 farfieldspacing=1
 telespacing=0.0003
-polyMeshDir=constant/polyMesh_gen
+polyMeshDir=/polyMesh

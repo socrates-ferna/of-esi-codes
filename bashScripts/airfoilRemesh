@@ -1,0 +1,62 @@
+#/bin/bash
+if [ -z "$FOAM_RUN" ]
+then 
+
+echo "locally sourcing OpenFOAM"
+of2012
+
+fi
+
+
+if [ -z "$1" ]
+then
+    echo "Log file not passed. Assuming log.pimpleFoam"
+    set -- "log.pimpleFoam" "{@:2}"
+fi
+
+sourceCase = $($PWD | rev | cut -d'/' -f1 | rev)
+echo "Source case: $sourceCase"
+otroSource = "$PWD"
+
+cp -r ../$sourceCase/system ../aux_case
+cp -r ../$sourceCase/constant ../aux_case
+cp -r ../$sourceCase/0 ../aux_case
+
+instants=$(foamListTimes)
+
+echo $instants
+lastInstant = ${instants[-1]}
+echo "Last Instant is: $lastInstant"
+
+cp -r ../$sourceCase/$lastInstant ../aux_case
+
+#for inst in $instants; do
+
+echo "$lastInstant"
+sed -i "s/polyMeshDir=.*/polyMeshDir=$inst\/polyMesh/" parameters.dat
+
+
+#cat parameters.dat
+
+#done
+
+rm -rf 0.[0-9]* [1-9]* processor*/[1-9]* processor*/0.[0-9]*
+
+mkdir $lastInstant
+
+echo "echoing inst $inst"
+lastAngle=$(tail -n 200 $1 | grep --line-buffered 'Saturated angle' | cut -d' ' -f3 | tr -d ';')
+lastAngle=$(bc -l <<<"${lastAngle}*180/3.141592")
+echo "$lastAngle degrees"
+
+sed -i "s/rotateAngle=.*/rotateAngle=$lastAngle/" parameters.dat
+
+echo "REMESHING WITH THIS PARAMETER FILE"
+echo "----------------------------------"
+cat parameters.dat
+
+pointwise -b meshUnstructuredRotate.glf parameters.dat
+
+cp -rT "$inst"/polyMesh constant/polyMesh
+
+mapFields -consistent -sourceTime latestTime ../aux_case

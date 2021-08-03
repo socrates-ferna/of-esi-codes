@@ -39,6 +39,8 @@ SourceFiles
 
 #include "fixedValuePointPatchField.H"
 #include "IOdictionary.H"
+//#include "lforces.H"
+//#include "lforceCoeffs.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -67,15 +69,13 @@ class PIDangularDisplacementPointPatchVectorField
         scalar P_;
         scalar I_;
         scalar D_;
-        scalar controlDelay_;
-
-        // needed vars
-        scalar error_=0;
         scalar errorIntegral_=0;
+        scalar errorDifferential_=0.0;
+        scalar error_=0;
+        scalar controlDelay_;
         scalar oldError_=0;
         scalar oldErrorIntegral_=0;
         scalar oldOmega_=0.0;
-        scalar errorDifferential_=0.0;
         label  timeIndex_=0;
         scalar oldangle_=0;
         scalar angle=0;
@@ -102,8 +102,9 @@ class PIDangularDisplacementPointPatchVectorField
         scalar meanValue_;
         dictionary averageDict_;
         scalar window_;
+        scalar t0_;
 
-        //functionObjects::forceCoeffs fc;
+        //lforceCoeffs pruebafc;
 
         //bool built_=false;
 

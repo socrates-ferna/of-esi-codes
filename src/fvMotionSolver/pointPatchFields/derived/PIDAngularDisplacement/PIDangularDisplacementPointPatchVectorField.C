@@ -55,10 +55,14 @@ PIDangularDisplacementPointPatchVectorField
     amplitude_(Zero),
     omega_(Zero),
     p0_(p.localPoints()),
+    angle(this->angle0_),
     PIDcontrolDict_(this->readControl()),
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    errorIntegral_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("errorIntegral",0.0)),
+    errorDifferential_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("errorDifferential",0.0)),
+    error_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("error",0.0)),
     controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("controlDelay",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
@@ -74,7 +78,8 @@ PIDangularDisplacementPointPatchVectorField
     controlString_(this->controlString(forcesDict_,controlTarget_)),
     meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
     averageDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("rollingAverage")),
-    window_(averageDict_.getOrDefault<scalar>("window",0.01))
+    window_(averageDict_.getOrDefault<scalar>("window",0.01)),
+    t0_(Zero)
 {}
 
 
@@ -93,10 +98,14 @@ PIDangularDisplacementPointPatchVectorField
     amplitude_(dict.get<scalar>("amplitude")),
     omega_(dict.get<scalar>("omega")),
     p0_(p.localPoints()),
+    angle(this->angle0_),
     PIDcontrolDict_(this->readControl()),
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    errorIntegral_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("errorIntegral",0.0)),
+    errorDifferential_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("errorDifferential",0.0)),
+    error_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("error",0.0)),
     controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("controlDelay",1.0)),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
@@ -112,20 +121,21 @@ PIDangularDisplacementPointPatchVectorField
     controlString_(this->controlString(forcesDict_,controlTarget_)),
     meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
     averageDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("rollingAverage")),
-    window_(averageDict_.getOrDefault<scalar>("window",0.01))
+    window_(averageDict_.getOrDefault<scalar>("window",0.01)),
+    t0_(dict.getOrDefault<scalar>("t0",0.0))
 {
     if (!dict.found("value"))
     {
         updateCoeffs();
     }
-    /*
+    
     if (dict.found("p0"))
     {
         p0_ = vectorField("p0", dict , p.size());
-        angle0_ = dict.get<scalar>("angle");
-        Info<< "RESETTING ANGLE: "<< angle0_<<endl;
+        //angle0_ = dict.get<scalar>("angle");
+        //Info<< "RESETTING ANGLE: "<< angle0_<<endl;
     }
-    else
+    /*else
     {
         p0_ = p.localPoints();
     }
@@ -149,6 +159,16 @@ PIDangularDisplacementPointPatchVectorField
         omegamin_ = actuatorModel.getOrDefault<scalar>("omegaMin",omegamin_);
     }
     
+    if (PIDcontrolDict_.subDict("PIDcontroller").found("windowValues"))
+    {
+        scalarList catchWindowValues(PIDcontrolDict_.subDict("PIDcontroller").get<scalarList>("windowValues"));
+        averageDict_.set("windowValues",catchWindowValues);
+    }
+    if (PIDcontrolDict_.subDict("PIDcontroller").found("windowTimes"))
+    {
+        scalarList catchWindowTimes(PIDcontrolDict_.subDict("PIDcontroller").get<scalarList>("windowTimes"));
+        averageDict_.set("windowValues",catchWindowTimes);
+    }
 }
 
 
@@ -168,10 +188,14 @@ PIDangularDisplacementPointPatchVectorField
     amplitude_(ptf.amplitude_),
     omega_(ptf.omega_),
     p0_(ptf.p0_, mapper),
+    angle(ptf.angle0_),
     PIDcontrolDict_(ptf.PIDcontrolDict_),
     P_(ptf.P_),
     I_(ptf.I_),
     D_(ptf.D_),
+    errorIntegral_(ptf.errorIntegral_),
+    errorDifferential_(ptf.errorDifferential_),
+    error_(ptf.error_),
     controlDelay_(ptf.controlDelay_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
@@ -187,7 +211,8 @@ PIDangularDisplacementPointPatchVectorField
     controlString_(ptf.controlString_),
     meanValue_(ptf.meanValue_),
     averageDict_(ptf.averageDict_),
-    window_(ptf.window_)
+    window_(ptf.window_),
+    t0_(ptf.t0_)
 {}
 
 
@@ -205,10 +230,14 @@ PIDangularDisplacementPointPatchVectorField
     amplitude_(ptf.amplitude_),
     omega_(ptf.omega_),
     p0_(ptf.p0_),
+    angle(ptf.angle0_),
     PIDcontrolDict_(ptf.PIDcontrolDict_),
     P_(ptf.P_),
     I_(ptf.I_),
     D_(ptf.D_),
+    errorIntegral_(ptf.errorIntegral_),
+    errorDifferential_(ptf.errorDifferential_),
+    error_(ptf.error_),
     controlDelay_(ptf.controlDelay_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
@@ -224,7 +253,8 @@ PIDangularDisplacementPointPatchVectorField
     controlString_(ptf.controlString_),
     meanValue_(ptf.meanValue_),
     averageDict_(ptf.averageDict_),
-    window_(ptf.window_)
+    window_(ptf.window_),
+    t0_(ptf.t0_)
 {}
 
 
@@ -273,6 +303,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             timeIndex_=t.timeIndex();
         }
         angle = angle0_ + omega_*t.value();
+        scalar passedAngle = angle - angle0_;
         vector axisHat = axis_/mag(axis_);
         vectorField p0Rel(p0_ - origin_);
         // report calculated angles
@@ -281,9 +312,9 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         report(Info);
         vectorField::operator=
         (
-            p0Rel*(cos(angle) - 1)
-        + (axisHat ^ p0Rel*sin(angle))
-        + (axisHat & p0Rel)*(1 - cos(angle))*axisHat
+            p0Rel*(cos(passedAngle) - 1)
+        + (axisHat ^ p0Rel*sin(passedAngle))
+        + (axisHat & p0Rel)*(1 - cos(passedAngle))*axisHat
         );
 
         fixedValuePointPatchField<vector>::updateCoeffs();
@@ -299,7 +330,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         oldOmega_= omega_;
         oldError_ = error_;
         oldErrorIntegral_ = errorIntegral_;
-        oldangle_ = angle;
+        oldangle_ = angle ;
     }
 
 
@@ -358,7 +389,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
             errorDifferential_ = (error_ - oldError_)/dt;
-            angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
+            angle = P_*error_ + errorIntegral_ + D_*errorDifferential_ ;
             omega_ = (angle - oldangle_)/dt;
 
             break;
@@ -426,11 +457,12 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
     vectorField p0Rel(p0_ - origin_);
     // report calculated angles
     report(Info);
+    scalar passedAngle = angle - angle0_;
     vectorField::operator=
     (
-        p0Rel*(cos(angle) - 1)
-      + (axisHat ^ p0Rel*sin(angle))
-      + (axisHat & p0Rel)*(1 - cos(angle))*axisHat
+        p0Rel*(cos(passedAngle) - 1)
+      + (axisHat ^ p0Rel*sin(passedAngle))
+      + (axisHat & p0Rel)*(1 - cos(passedAngle))*axisHat
     );
 
     fixedValuePointPatchField<vector>::updateCoeffs();
@@ -453,9 +485,12 @@ void PIDangularDisplacementPointPatchVectorField::write
     os.writeEntry("omega", omega_);
     os.writeEntry("omegamin", omegamin_);
     p0_.writeEntry("p0", os);
+    os.writeEntry("t0",t0_);
     os.writeEntry("P",P_);
     os.writeEntry("I",I_);
     os.writeEntry("D",D_);
+    os.writeEntry("windowValues",averageDict_.get<scalarList>("windowValues"));
+    os.writeEntry("windowTimes",averageDict_.get<scalarList>("windowTimes"));
     writeEntry("value", os);
 }
 
@@ -526,14 +561,14 @@ void PIDangularDisplacementPointPatchVectorField::rollavg
 
     for (scalar& dti : windowTimes) //if windowTimes empty will be zero?
     {
-        dti += dt; //increase value of all elements by dt
+        dti += dt + t0_; //increase value of all elements by dt
     }
 
     bool removeValue = true;
     // check if values in stack have reached the window
     while (removeValue && windowTimes.size())
     {
-        removeValue = windowTimes.first() > window_;
+        removeValue = (windowTimes.first() - t0_) > window_;
 
         if (removeValue)
         {
@@ -595,6 +630,7 @@ void PIDangularDisplacementPointPatchVectorField::report
     os.writeEntry("Raw angle",rawangle_);
     os.writeEntry("Saturated omega", omega_);
     os.writeEntry("Saturated angle", angle);
+    os.writeEntry("Angle seen by OpenFOAM",angle-angle0_);
     os.writeEntry("error", error_);
     os.writeEntry("errorIntegral", errorIntegral_);
     os.writeEntry("errorDifferential",errorDifferential_);
