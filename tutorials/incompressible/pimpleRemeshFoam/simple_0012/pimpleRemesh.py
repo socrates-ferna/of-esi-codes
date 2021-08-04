@@ -39,7 +39,6 @@ def main():
     print("Startup case: ", casePath)
     solver = p.solver
     parallel = p.parallel
-    crescentStr = "mpirun -x LD_LIBRARY_PATH -x FOAM_USER_LIBBIN -x WM_PROJECT_USER_DIR -x PATH -x WM_PROJECT_DIR -x WM_PROJECT_INST_DIR -x MPI_BUFFER_SIZE -machinefile $PBS_NODEFILE -np"
     crescent = p.crescent
     meshType = p.meshType
     mapFieldsCmd = "mapFields -consistent -sourceTime latestTime"
