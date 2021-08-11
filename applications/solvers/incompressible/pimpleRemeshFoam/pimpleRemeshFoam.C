@@ -184,8 +184,15 @@ int main(int argc, char *argv[])
     Info<<"Remesh command is: "<<remeshCommand<<endl;
     */
     scalar remeshPeriod(remeshDict.getOrDefault<scalar>("remeshPeriod",0.01));
-
-
+    int simdims(remeshDict.getOrDefault<int>("simDims",2));
+    if(simdims == 2)
+    {
+	mesh.setAspectThreshold(1e10);
+    }
+    else
+    {
+	mesh.setAspectThreshold(1000);
+    }
     
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -252,7 +259,7 @@ int main(int argc, char *argv[])
         
         if (lastMeshCheck > remeshPeriod)
         {
-            mesh.setAspectThreshold(1e10);
+            //mesh.setAspectThreshold(1e10);
             failedChecks = mesh.checkMesh(true);
             if (failedChecks)
             {

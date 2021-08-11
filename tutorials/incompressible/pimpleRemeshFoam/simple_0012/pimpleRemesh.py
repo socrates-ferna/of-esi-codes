@@ -63,7 +63,7 @@ def main():
     if not crescent:
         logFileName = 'log.' + solver
     else:
-        logFileName = "dummy" ## pendiente. REQUIERE DE UN GLOB O ALGO QUE JUNTE EL NOMBRE DEL ACCESO DIRECTO CON EL NOMBRE DEL CASO
+        logFileName = 'log.' + solver ## pendiente. REQUIERE DE UN GLOB O ALGO QUE JUNTE EL NOMBRE DEL ACCESO DIRECTO CON EL NOMBRE DEL CASO
 
     #Get end Time
     with open(caseName+'/system/controlDict','r') as f:

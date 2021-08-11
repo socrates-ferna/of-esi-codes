@@ -49,8 +49,8 @@ def run_solver(solver,parallel,casePath,logFileName,crescent):
         if crescent:
             print("CRESCENT RUN")
             crescentStr = ("mpirun -x LD_LIBRARY_PATH -x FOAM_USER_LIBBIN -x WM_PROJECT_USER_DIR -x PATH"
-             "-x WM_PROJECT_DIR -x WM_PROJECT_INST_DIR -x MPI_BUFFER_SIZE -machinefile $PBS_NODEFILE -np "
-             "${{cpus}} " + solver + " -parallel >> log." + solver)
+             " -x WM_PROJECT_DIR -machinefile $PBS_NODEFILE -np "
+             + str(nProcs) + " " + solver + " -parallel >> log." + solver)
             print("Running the command: "+crescentStr)
             subprocess.run(crescentStr,shell=True)
             #en crescent no sé si controlas dónde se escribe el output
