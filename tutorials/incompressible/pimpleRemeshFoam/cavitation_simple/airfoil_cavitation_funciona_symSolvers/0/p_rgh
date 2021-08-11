@@ -17,7 +17,7 @@ FoamFile
 
 dimensions      [1 -1 -2 0 0];
 
-internalField   uniform 1.10796e5; // it is dependent on depth, how to set up this?
+internalField   uniform 1.10796e5; // is it dependent on depth? how to set up this?
 
 
 boundaryField
