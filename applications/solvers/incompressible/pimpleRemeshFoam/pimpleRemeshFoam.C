@@ -121,8 +121,6 @@ int main(int argc, char *argv[])
 
     scalar maxMeshCo = 1.0;
 
-    scalar meshCoNum = 1.0;
-
     scalar lastMeshCheck = 0.0;
 
     // --- Read mesh quality criteria
@@ -196,6 +194,7 @@ int main(int argc, char *argv[])
         #include "readDyMControls.H"   //MIRA ESTO POR SI TE ES ÚTIL
         #include "CourantNo.H"
         #include "setDeltaT.H"
+        #include "meshCourantNo.H"
         #include "setMeshDeltaT.H"
         ++runTime;
         lastMeshCheck = lastMeshCheck + runTime.deltaTValue();
@@ -223,11 +222,6 @@ int main(int argc, char *argv[])
 
                         // Make the flux relative to the mesh motion
                         fvc::makeRelative(phi, U);
-                    }
-
-                    if (checkMeshCourantNo)
-                    {
-                        #include "meshCourantNo.H"
                     }
                 }
             }
