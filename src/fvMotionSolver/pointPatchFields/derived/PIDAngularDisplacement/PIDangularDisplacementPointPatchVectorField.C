@@ -159,15 +159,17 @@ PIDangularDisplacementPointPatchVectorField
         omegamin_ = actuatorModel.getOrDefault<scalar>("omegaMin",omegamin_);
     }
     
-    if (PIDcontrolDict_.subDict("PIDcontroller").found("windowValues"))
+    if (dict.found("windowValues")) // aquí puedes usar el dict tal como escribe el report!!!
     {
-        scalarList catchWindowValues(PIDcontrolDict_.subDict("PIDcontroller").get<scalarList>("windowValues"));
+        scalarList catchWindowValues(dict.get<scalarList>("windowValues"));
         averageDict_.set("windowValues",catchWindowValues);
+        Info<<"READ WINDOWVALUES"<<endl;
     }
-    if (PIDcontrolDict_.subDict("PIDcontroller").found("windowTimes"))
+    if (dict.found("windowTimes"))
     {
-        scalarList catchWindowTimes(PIDcontrolDict_.subDict("PIDcontroller").get<scalarList>("windowTimes"));
+        scalarList catchWindowTimes(dict.get<scalarList>("windowTimes"));
         averageDict_.set("windowValues",catchWindowTimes);
+        Info<<"READ WINDOWTIMES"<<endl;
     }
 }
 
@@ -342,6 +344,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             fc.calcForcesMoment();
             //fc_d.calcForcesMoment();
             myForce = fc.forceEff(); // FUNCTION from lforces Class RETURNS ROTATED FORCE
+            //PENDIENTE QUE COJA LOS MOMENTOS TB!!
             //vector myForce_2(fc_d.forceEff);
             //vector checkforce(myForce-myForce_2);
             //Info<<"Subtracted Force"<<endl;
@@ -489,8 +492,14 @@ void PIDangularDisplacementPointPatchVectorField::write
     os.writeEntry("P",P_);
     os.writeEntry("I",I_);
     os.writeEntry("D",D_);
-    os.writeEntry("windowValues",averageDict_.get<scalarList>("windowValues"));
-    os.writeEntry("windowTimes",averageDict_.get<scalarList>("windowTimes"));
+    if (averageDict_.found("windowValues"))
+    {
+        os.writeEntry("windowValues",averageDict_.get<scalarList>("windowValues"));
+    }
+    if (averageDict_.found("windowTimes"))
+    {
+        os.writeEntry("windowTimes",averageDict_.get<scalarList>("windowTimes"));
+    }
     writeEntry("value", os);
 }
 
@@ -515,14 +524,20 @@ IOdictionary PIDangularDisplacementPointPatchVectorField::readControl()
 // Determine control variable string to output during execution
 word PIDangularDisplacementPointPatchVectorField::controlString(const dictionary& dict,label controlTarget)
 {
-        wordList forceStrings(3);
-        wordList forceCoeffStrings(3);
+        wordList forceStrings(6);
+        wordList forceCoeffStrings(6);
         forceStrings[0] = "Drag Force";
         forceStrings[1] = "Side Force";
         forceStrings[2] = "Lift Force";
+        forceStrings[3] = "Roll Moment";
+        forceStrings[4] = "Pitch Moment";
+        forceStrings[5] = "Yaw Moment";
         forceCoeffStrings[0] = "Cd";
         forceCoeffStrings[1] = "Cs";
         forceCoeffStrings[2] = "Cl";
+        forceCoeffStrings[3] = "Cr";
+        forceCoeffStrings[4] = "Cp";
+        forceCoeffStrings[5] = "Cy";
         word controlString = "Cl";
 
         label direction = dict.getOrDefault<int>("direction",2);

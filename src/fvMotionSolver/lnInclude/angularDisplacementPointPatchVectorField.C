@@ -1,1 +1,0 @@
-../pointPatchFields/derived/angularDisplacement/angularDisplacementPointPatchVectorField.C

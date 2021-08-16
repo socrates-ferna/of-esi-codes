@@ -8,3 +8,5 @@ platforms/*
 **log.*
 pyScripts/log.*
 **__pycache__
+dconfig
+doc/

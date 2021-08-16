@@ -183,7 +183,9 @@ def main():
         functions.run_solver(solver,parallel,os.path.join(parentPath,caseName),logFileName,crescent)
 
         currentTime = functions.get_latestTime(casePath,parallel)
-        endTime += 0.1
+        if p.testing:
+            endTime += 0.1
+            
         if currentTime >= endTime:
             print("FINISHED RUN")
         else:

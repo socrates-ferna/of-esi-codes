@@ -1,1 +1,0 @@
-../pointPatchFields/derived/angularVelocity/angularVelocityPointPatchVectorField.H
