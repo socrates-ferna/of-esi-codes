@@ -17,7 +17,7 @@ FoamFile
 
 dimensions      [1 -1 -2 0 0];
 
-internalField   uniform 1.10796e5; // is it dependent on depth? how to set up this?
+internalField   uniform 1.01e5; // is it dependent on depth? how to set up this? NO, IT IS THE REFERENCE PRESSURE
 
 
 boundaryField
@@ -25,7 +25,7 @@ boundaryField
     freestream
     {
         type            freestreamPressure;
-        freestreamValue uniform 1.10796e5;
+        freestreamValue uniform 1.01e5;
     }
     airfoil
     {

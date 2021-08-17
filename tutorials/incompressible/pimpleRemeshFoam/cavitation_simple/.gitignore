@@ -4,3 +4,5 @@ testing*
 */dynamicCode
 */postProcessing
 */constant/polyMesh*
+airfoil_*
+simplecav*

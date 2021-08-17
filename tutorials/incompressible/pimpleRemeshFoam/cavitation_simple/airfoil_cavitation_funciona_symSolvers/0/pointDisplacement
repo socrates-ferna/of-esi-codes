@@ -28,8 +28,8 @@ boundaryField
         axis            ( 0 0 1 );
         origin          ( 0.25 0 0 );
         angle0          0;
-        amplitude       0.0872665;
-        omega           0.1;
+        amplitude       0.16;
+        omega           1.5;
         value           uniform ( 0 0 0 );
     }
     freestream

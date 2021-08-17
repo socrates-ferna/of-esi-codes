@@ -17,14 +17,14 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 
-internalField   uniform (17.72 3.12 0);
+internalField   uniform (18 0 0);
 
 boundaryField
 {
     freestream
     {
         type            freestreamVelocity;
-        freestreamValue uniform (17.72 3.12 0);
+        freestreamValue uniform (18 0 0);
     }
     airfoil
     {

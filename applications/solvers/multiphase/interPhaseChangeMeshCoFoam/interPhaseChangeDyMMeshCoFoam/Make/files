@@ -1,0 +1,3 @@
+interPhaseChangeDyMMeshCoFoam.C
+
+EXE = $(FOAM_APPBIN)/interPhaseChangeDyMMeshCoFoam

@@ -1,0 +1,3 @@
+interPhaseChangeMeshCoFoam.C
+
+EXE = $(FOAM_APPBIN)/interPhaseChangeMeshCoFoam

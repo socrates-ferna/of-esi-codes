@@ -126,13 +126,15 @@ potentialFlow
     consistent                 yes;
     nCorrectors                2;
     nNonOrthogonalCorrectors   2;
-    pRefCell                   0;
-    pRefValue                  0;
+    //pRefCell                   0;
+    //pRefValue                  101325;
 
     residualControl
     {
         U         0.0001;
         p         0.0001;
+        p_rgh     1e-4;
+        alpha.water 1e-4;
         k         0.0001;
         omega     0.0001;
         epsilon   0.0001;
@@ -148,8 +150,8 @@ potentialFlow
 PIMPLE
 {
     momentumPredictor           no;
-    nOuterCorrectors            1;
-    nCorrectors                 3;
+    nOuterCorrectors            10;
+    nCorrectors                 1;
     nNonOrthogonalCorrectors    0;
     checkMeshCourantNo	yes;
 
@@ -159,14 +161,18 @@ relaxationFactors
 {
     fields
     {
-        p         1;
+        p         0.5;
+        pFinal      1;
+        p_rgh     0.6;
+        p_rghFinal 1;
+        alpha.water 1;
+        alpha.waterFinal 1;
     }
 
     equations
     {
-        U         1;
-        k         1;
-        omega     1;
+        "U|k|omega" 0.6;
+        "(U|k|omega)Final" 1;
         epsilon   1;
         nuTilda   1;
         ReThetat  1;
