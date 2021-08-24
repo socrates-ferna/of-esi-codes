@@ -1,10 +1,14 @@
-1. New class derived from pointPatchFields to calculate patch displacement in dynamicMeshes. It is conceived for airfoil or lifting surfaces deflection.
+## Work in progress
+This repository contains the code in a raw state that allowed me to complete my thesis, but there are plenty of details to correct before I can call it a "release". This README will be updated when it is ready.
+
+## Summary of contents
+
+1. New class PIDangularDisplacement derived from fixeValuePointPatchField<vector> to calculate patch displacement in dynamicMeshes. It is conceived for airfoil or lifting surfaces automatic deflection through rotation around a point using a PID controller
 
 
-2. Custom pimpleFoam-based solver (pimpleRemeshFoam) that checks mesh quality and calls remeshing routines in Pointwise if needed
+2. A solver called pimpleRemeshFoam that checks mesh quality, writes and stops the simulation if bad quality is encountered. To be used along with *pimpleRemesh.py* as process handler for remeshing. Pointwise is the default remesher but the call can be customised in the file *parameters.py*
 
 
-(These features are not fully functional)
 The point displacement class uses a PID controller to reach a specified setPoint among the following variables:
 - deflection angle
 - target lift force in any given direction

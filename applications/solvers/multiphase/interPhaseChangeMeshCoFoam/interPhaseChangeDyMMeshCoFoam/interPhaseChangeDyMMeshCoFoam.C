@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2011-2017 OpenFOAM Foundation
+    Author: Sócrates Fernández
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.

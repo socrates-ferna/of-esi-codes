@@ -1,0 +1,64 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      transportProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+phases (water vapour);
+
+phaseChangeTwoPhaseMixture SchnerrSauer;
+
+pSat        2300; // Saturation pressure
+
+sigma       3.1; // cavitation number. Calculated with dummy conditions resembling AC
+
+water
+{
+    transportModel Newtonian;
+    nu             1.0518e-3; // at 18ºC from engineeringToolBox.com
+    rho            998.57;
+}
+
+vapour
+{
+    transportModel Newtonian;
+    nu             9.72e-6; // https://www.peacesoftware.de/einigewerte/calc_dampf.php7
+    rho            0.01703;   // 2300 Pa 20ºC
+}
+
+KunzCoeffs
+{
+    UInf            U20.0;
+    tInf            t0.005; // L = 0.1 m
+    Cc              C1000;
+    Cv              C1000;
+}
+
+MerkleCoeffs
+{
+    UInf            20.0;
+    tInf            0.005;  // L = 0.1 m
+    Cc              80;
+    Cv              1e-03;
+}
+
+SchnerrSauerCoeffs
+{
+    n               1.6e+13;
+    dNuc            2.0e-06;
+    Cc              1;
+    Cv              1;
+}
+
+// ************************************************************************* //

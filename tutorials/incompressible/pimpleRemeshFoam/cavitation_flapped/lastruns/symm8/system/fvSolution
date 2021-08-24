@@ -1,0 +1,224 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    "alpha.water.*"
+    {
+        cAlpha          0;
+        nAlphaCorr      2;
+        nAlphaSubCycles 1;
+
+        MULESCorr       yes;
+        nLimiterIter    5;
+
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-8;
+        relTol          0;
+        maxIter         10;
+    };
+
+    "U.*"
+    {
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-6;
+        relTol          0;
+    };
+
+    p_rgh
+    {
+        solver          GAMG;
+        tolerance       1e-8;
+        relTol          0.1;
+        smoother        DICGaussSeidel;
+        maxIter         50;
+    };
+
+    p_rghFinal
+    {
+        solver          PCG;
+        preconditioner
+        {
+            preconditioner  GAMG;
+            tolerance       1e-6;
+            relTol          0;
+            nVcycles        2;
+            smoother        DICGaussSeidel;
+
+        };
+        tolerance       1e-7;
+        relTol          0;
+        maxIter         50;
+    };
+
+    "pcorr.*"
+    {
+        $p_rgh;
+        relTol          0;
+    };
+
+    Phi
+    {
+        $p_rgh;
+        relTol          0;
+    };
+
+        "(k|omega|epsilon|nuTilda|q|zeta|ReThetat|gammaInt|kl|kt|R)"
+    {
+        solver           PBiCGStab;
+        preconditioner   DILU;
+        tolerance        1e-08;
+        relTol           0.01;
+    }
+
+    "(kFinal|omegaFinal|epsilonFinal|nuTildaFinal|qFinal|ReThetatFinal|gammaIntFinal|klFinal|ktFinal|RFinal)"
+    {
+        $U;
+                tolerance       1e-08;
+        relTol           0;
+    }
+    "(cellDisplacement.*|cellMotionU.*)"
+    //"(cellDisplacementFinal|cellMotionUFinal)"
+    {
+        /*
+        solver          GAMG;
+        tolerance       1e-06;
+        relTol          0;
+        smoother        GaussSeidel;
+        cacheAgglomeration true;
+        nCellsInCoarsestLevel 10;
+        agglomerator    faceAreaPair;
+        mergeLevels     1;
+        */
+        solver          PCG;
+        preconditioner  DIC;
+        tolerance       1e-08;
+        relTol          0;
+
+	//minIter		3;
+	//maxIter		100;
+    }
+}
+
+potentialFlow
+{
+    nNonOrthogonalCorrectors   3;
+}
+
+
+"(SIMPLE|PISO)"
+{
+    consistent                 yes;
+    nCorrectors                2;
+    nNonOrthogonalCorrectors   2;
+    //pRefCell                   0;
+    //pRefValue                  101325;
+
+    residualControl
+    {
+        U         0.0001;
+        p         0.0001;
+        p_rgh     1e-4;
+        alpha.water 1e-4;
+        k         0.0001;
+        omega     0.0001;
+        epsilon   0.0001;
+        nuTilda   0.0001;
+        Rethetat  0.0001;
+        gammaInt  0.0001;
+        kl        0.0001;
+        kt        0.0001;
+        R         0.0001;
+    }
+}
+
+PIMPLE
+{
+    momentumPredictor           no;
+    nOuterCorrectors            5;
+    nCorrectors                 1;
+    nNonOrthogonalCorrectors    0;
+    checkMeshCourantNo	yes;
+    residualControl
+    {
+        U
+        {
+            tolerance 1e-6;
+            relTol      0;
+        }
+        p_rgh
+        {
+            tolerance 1e-6;
+            relTol      0;
+        }
+        k
+        {
+            tolerance 1e-6;
+            relTol      0;
+        }
+        omega
+        {
+            tolerance 1e-6;
+            relTol      0;
+        }
+        /*
+        p         0.0001;
+        p_rgh     1e-4;
+        alpha.water 1e-4;
+        k         0.0001;
+        omega     0.0001;
+        epsilon   0.0001;
+        nuTilda   0.0001;
+        Rethetat  0.0001;
+        gammaInt  0.0001;
+        kl        0.0001;
+        kt        0.0001;
+        R         0.0001;
+        */
+    }
+
+}
+
+relaxationFactors
+{
+    fields
+    {
+        p         0.5;
+        pFinal      1;
+        p_rgh     0.6;
+        p_rghFinal 1;
+        alpha.water 1;
+        alpha.waterFinal 1;
+    }
+
+    equations
+    {
+        "U|k|omega" 0.6;
+        "(U|k|omega)Final" 1;
+        epsilon   1;
+        nuTilda   1;
+        ReThetat  1;
+        gammaInt  1;
+        kl        1;
+        kt        1;
+        R         1;
+    }
+}
+
+
+// ************************************************************************* //

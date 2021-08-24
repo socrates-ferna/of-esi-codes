@@ -82,13 +82,6 @@ Note
 #include "CorrectPhi.H"
 #include "fvOptions.H"
 #include "mapFields.H"
-//#include "IOdictionary.H"
-//#include "argList.H"
-
-//#include "checkTools.H"
-//#include "checkTopology.H"
-//#include "checkGeometry.H"
-//#include "checkMeshQuality.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -115,33 +108,12 @@ int main(int argc, char *argv[])
 
     turbulence->validate();
 
-    //label nFailedChecks = 0;
 
     bool failedChecks = false;
 
     scalar maxMeshCo = 1.0;
 
     scalar lastMeshCheck = 0.0;
-
-    // --- Read mesh quality criteria
-
-    Info<< "\nReading Mesh Quality Dict\n"<< endl;
-    autoPtr<IOdictionary> qualDict;
-    //autoPtr<surfaceWriter> surfWriter;
-    qualDict.reset
-    (
-        new IOdictionary
-        (
-            IOobject
-            (
-                "meshQualityDict",
-                mesh.time().system(),
-                mesh,
-                IOobject::MUST_READ,
-                IOobject::NO_WRITE
-            )
-        )
-    );
 
     IOdictionary remeshDict
     (
@@ -155,34 +127,9 @@ int main(int argc, char *argv[])
         )
     );
 
-    IOdictionary myMapDict
-    (
-        IOobject
-        (
-            "mymapFieldsDict",
-            mesh.time().system(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::NO_WRITE
-        )
-    );
-
-    //Info<<remeshDict.get<wordRes>("options")<<endl; // crashes bc of -b option
-    /*
-    string remeshCommand;
-    string mesher(remeshDict.getOrDefault<word>("mesher","snappyHexMesh"));
-    string language(remeshDict.getOrDefault<word>("language","bash"));
-    string logFile(remeshDict.getOrDefault<word>("logFile","log.pimpleRemeshFoam"));
-    string script(remeshDict.getOrDefault<word>("script","remesh.sh"));
-    string op1(remeshDict.getOrDefault<word>("option1",""));
-    op1 = "-" + op1;
-    string op2(remeshDict.getOrDefault<word>("option2",""));
-    string op3(remeshDict.getOrDefault<word>("option3",""));
-    remeshCommand = language+ " " + script+ " " + logFile+ " " + mesher+ " " + op1+ " " + op2+ " " + op3;
-    Info<<"Remesh command is: "<<remeshCommand<<endl;
-    */
     scalar remeshPeriod(remeshDict.getOrDefault<scalar>("remeshPeriod",0.01));
     int simdims(remeshDict.getOrDefault<int>("simDims",2));
+    
     if(simdims == 2)
     {
 	mesh.setAspectThreshold(1e10);
@@ -247,9 +194,6 @@ int main(int argc, char *argv[])
                 turbulence->correct();
             }
         }
-        //nFailedChecks = checkMeshQuality(mesh, qualDict(), surfWriter);
-        //mesh check based on 2 conditions:
-        //1. Every 0.1s
         
         if (lastMeshCheck > remeshPeriod)
         {
@@ -258,117 +202,6 @@ int main(int argc, char *argv[])
             if (failedChecks)
             {
                 runTime.writeAndEnd();
-                
-                /*
-                Info<<"creating IOobject"<<endl;
-                IOobject oMesh
-                (
-                    "copyMesh",
-                    runTime.timeName(), 
-                    runTime,
-                    Foam::IOobject::NO_READ,
-                    Foam::IOobject::AUTO_WRITE
-                );
-
-                Info<<"creating auxiliary mesh"<<endl;
-
-
-                fvMesh auxMesh
-                (
-                    oMesh,
-                    pointField(mesh.points()),
-                    faceList(mesh.faces()),
-                    cellList(mesh.cells()),
-                    true
-                );
-                
-                const polyBoundaryMesh& patches = mesh.boundaryMesh();
-
-                List<polyPatch*> p(patches.size());
-
-                forAll(p,patchi)
-                {
-                    p[patchi] = patches[patchi].clone(auxMesh.boundaryMesh()).ptr();
-                }
-
-                auxMesh.addFvPatches(p);
-                
-                
-                //List<polyPatch*> mypatches = mesh.boundary();
-                //auxMesh.addFvPatches(mesh.boundaryMesh(),true);
-                auxMesh.write();
-                //mesh.resetMotion();
-                mesh.write(); // esto me da el problema
-                //mesh.destr
-
-                Info<<"Creating mapFields Object with the following dict:"<<endl;
-                Info<<myMapDict.subDict("origToCopy")<<endl;
-                functionObjects::mapFields myMapFields("oToCopy",runTime,myMapDict.subDict("origToCopy"));
-
-                myMapFields.execute();
-                myMapFields.write();
-                */
-                /*
-                mesh.write();
-                
-                if(Pstream::parRun())
-                {
-                    if(Pstream::master())
-                    {
-                        //call remeshing routine
-                        system("bash remesh_plus_map");
-                        //system("pointwise -b meshUnstructured.glf parameters.dat"); // let's say it writes the mesh to ../aux_case
-
-                                            }
-                }
-                else
-                {
-                    system("bash remesh_plus_map");
-                    //system("pointwise -b meshUnstructured.glf parameters.dat");
-                }
-                */
-                /*
-                //system("pointwise -b meshUnstructured.glf parameters.dat");
-                Info<<args.args()<<endl;
-                Info<<args.rootPath()<<args.caseName()<<endl;
-                //mesh.~dynamicFvMesh();
-                //runTime.readIfModified();
-                //runTime.readModifiedObjects();
-                Info<<"MES SIZE"<<mesh.nCells();
-                
-                Info<< "RECREATING MESH"<<endl;
-                
-                autoPtr<dynamicFvMesh> meshPtr(dynamicFvMesh::New(args,runTime));
-
-                dynamicFvMesh& mesh = meshPtr();
-                
-
-                */
-                //mesh.write();
-                //mesh.update();
-                
-/*
-                //#include "createDynamicFvMesh.H"
-
-                functionObjects::mapFields backMapFields("copyMesh",runTime,myMapDict.subDict("copyToNew"));
-
-                backMapFields.execute();
-                backMapFields.write();
-
-                auxMesh.~fvMesh();
-
-*/
-
-
-                // build mesh in aux_case
-                // map to that mesh with meshToMesh class
-                // "substitute" my current mesh with the mesh built from aux_case
-                // map back from aux_case to the current mesh (which is identical to aux_case)
-
-
-
-                //reset failedChecks
-                //failedChecks = false;
             }
             lastMeshCheck = 0.0;
         }

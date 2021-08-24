@@ -1,0 +1,68 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "1/uniform/functionObjects";
+    object      functionObjectProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+results
+{
+    forceCoeffs
+    {
+        scalar
+        {
+            Cd              0.0354319779772949;
+            Cs              2.109844665846025e-21;
+            Cl              1.045938652763274;
+            CmRoll          0.5229693263816371;
+            CmPitch         -0.5068824644581615;
+            CmYaw           -0.01771598898864745;
+            Cd(f)           0.5406853153702845;
+            Cd(r)           -0.5052533373929896;
+            Cs(f)           -0.01771598898864745;
+            Cs(r)           0.01771598898864745;
+            Cl(f)           0.01608686192347553;
+            Cl(r)           1.029851790839799;
+        }
+    }
+    residuals
+    {
+        scalar
+        {
+            alpha.water_initial 1;
+            alpha.water_final 4.74544e-08;
+            k_initial       4.12111e-05;
+            k_final         3.19906e-09;
+            p_rgh_initial   0.7395;
+            p_rgh_final     3.01131e-08;
+            cellDisplacementx_initial 1;
+            cellDisplacementx_final 6.98594e-15;
+            cellDisplacementy_initial 1;
+            cellDisplacementy_final 2.98645e-14;
+            omega_initial   8.349609999999999e-05;
+            omega_final     4.67992e-09;
+        }
+        label
+        {
+            alpha.water_iters 10;
+            k_iters         2;
+            p_rgh_iters     12;
+            cellDisplacementx_iters 1;
+            cellDisplacementy_iters 1;
+            omega_iters     4;
+        }
+    }
+}
+
+
+// ************************************************************************* //
