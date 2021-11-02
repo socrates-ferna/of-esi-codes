@@ -10,3 +10,5 @@ pyScripts/log.*
 **__pycache__
 dconfig
 doc/
+*.zip
+wingMotion

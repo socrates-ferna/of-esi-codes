@@ -1,0 +1,6 @@
+*.ipynb
+*.py
+archive
+0012*
+*/*[1-9]*
+*/constant/polyMesh
