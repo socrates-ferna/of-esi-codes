@@ -209,6 +209,8 @@ public:
 
             void rollavg(scalar currentValue, dictionary& dict, const scalar& dt);
 
+            scalar kalman(const scalar unfiltered);
+
         //- Write
         void report(Ostream&) const;
         virtual void write(Ostream&) const;

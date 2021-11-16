@@ -343,12 +343,9 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
             fc.calcForcesMoment();
             //fc_d.calcForcesMoment();
-            myForce = fc.forceEff(); // FUNCTION from lforces Class RETURNS ROTATED FORCE
-            //PENDIENTE QUE COJA LOS MOMENTOS TB!!
-            //vector myForce_2(fc_d.forceEff);
-            //vector checkforce(myForce-myForce_2);
-            //Info<<"Subtracted Force"<<endl;
-            rollavg(myForce[direction_],averageDict_,dt); //rolling Average with FIFOStack class
+            myForce = fc.forceEff(); // forceEff from lforces Class RETURNS ROTATED FORCE
+            rollavg(myForce[direction_],averageDict_,dt); // rolling Average with FIFOStack class
+            // FIFO needs to be replaced with Kalman
             Info<<"meanValue out from function is: "<<meanValue_<<endl;
             error_ = setPoint_ - meanValue_; // this should choose x,y,z according to direction
 
@@ -363,13 +360,10 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
         break;
 
-        case 1:  // PUEDO ACCEDER AL OBJETO YA CREADO POR PIMPLE? Sí pero aquí no conviene, mejor independencia
+        case 1: 
 
             fc.calcrot();
-            //fc_d.calcrot();
             mycoefs = fc.coefList;
-            //List<scalar> mycoefs_2(fc_d.coefList);
-            //List<scalar> 
             //Info<<"Cd"<< mycoefs[0]<<endl;
             //Info<<"Cs"<< mycoefs[1]<<endl;
             rollavg(mycoefs[direction_], averageDict_,dt);
@@ -378,7 +372,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             //Info<<"CmPitch"<< mycoefs[4]<<endl;
             //Info<<"CmYaw"<< mycoefs[5]<<endl;
 
-            error_ = setPoint_ - meanValue_; // pending option to choose other coeffs than Cl
+            error_ = setPoint_ - meanValue_; 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
             errorDifferential_ = (error_ - oldError_)/dt;
             angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
@@ -635,6 +629,15 @@ void PIDangularDisplacementPointPatchVectorField::rollavg
     Info<<"FIFO Window Values"<<windowValues<<endl;
     */
 
+}
+
+scalar PIDangularDisplacementPointPatchVectorField::kalman
+(
+    const scalar unfiltered
+)
+{
+
+    return unfiltered; // PENDING
 }
 void PIDangularDisplacementPointPatchVectorField::report
 (
