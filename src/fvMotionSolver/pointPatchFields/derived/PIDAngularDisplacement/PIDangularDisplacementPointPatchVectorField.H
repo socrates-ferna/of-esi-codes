@@ -39,8 +39,8 @@ SourceFiles
 
 #include "fixedValuePointPatchField.H"
 #include "IOdictionary.H"
-//#include "lforces.H"
-//#include "lforceCoeffs.H"
+#include "lforces.H"
+#include "lforceCoeffs.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -55,6 +55,22 @@ class PIDangularDisplacementPointPatchVectorField
 :
     public fixedValuePointPatchField<vector>
 {
+    public:
+
+    // filterType class declaration ahead of
+    enum class filterType{
+            FIRST,
+            SECOND,
+            BUTTER,
+            AVERAGE
+        };
+    static const Enum<filterType> filterTypeNames;
+
+    // Transfer function. Serves as container for denom and num vectors result from zplane_tf()
+    struct tf{vector numerator; vector denominator;};
+
+
+    private: //Or protected?
     // Private data
         //Read from pointDisplacement
         vector axis_;
@@ -69,10 +85,17 @@ class PIDangularDisplacementPointPatchVectorField
         scalar P_;
         scalar I_;
         scalar D_;
+        // Control Output Smoothing through roll-off filter, e.g. G(s) = 1 / (Tf*s + 1)^2
+        // We use it because optiPID script from Octave control pkg for PID tuning assumes roll-off function
+        // It is similar to an actuator connected to the raw control signal
+        bool COrolloff_=false;
+        dictionary actuatorModel;
+        filterType COrolloffType_;
         scalar errorIntegral_=0;
         scalar errorDifferential_=0.0;
         scalar error_=0;
         scalar controlDelay_;
+        bool applyFilter_=false;
         scalar oldError_=0;
         scalar oldErrorIntegral_=0;
         scalar oldOmega_=0.0;
@@ -81,17 +104,18 @@ class PIDangularDisplacementPointPatchVectorField
         scalar angle=0;
         scalar rawangle_=0;
         scalar rawomega_=0;
+        scalar PV_=0; // Process Variable
 
         int controlTarget_;  // should be label type
         wordList patches_; // did I declare this?
         dictionary forcesDict_;
-        //functionObjects::lforceCoeffs fc_d;
         scalar setPoint_=-0.35;
         label direction_;
         List<scalar> mycoefs;
-        Vector<scalar> myForce; // do I need it to be a Vector (dimensioned)?
+        Vector<scalar> myForce; // This is the same as vector class
 
         //actuator limits
+        bool saturate_=false; // 
         scalar anglemax_;
         scalar anglemin_;
         scalar omegamax_;
@@ -100,15 +124,25 @@ class PIDangularDisplacementPointPatchVectorField
 
         //averaging variables
         scalar meanValue_;
-        dictionary averageDict_;
+        dictionary PVfilterDict_;
+        filterType PVfilterType_;
         scalar window_;
         scalar t0_;
-
-        //lforceCoeffs pruebafc;
-
-        //bool built_=false;
-
-
+        //scalar Tf_; // 63% response time in first order filter for Control Output
+        scalar wc_; //cut-off frequency: widespread concept is where gain=1/sqrt(2) or gain=-3dB
+        scalar T_;  //Sampling period for digital filter
+        vector COdenom_;//  G(s) = (b0*s^2 + b1*s + b2) / (a0*s^2 + a1*s + a2*s)
+        vector COnum_; // if 1st order we will use b1,b2 and a1,a2 and appropriate difference formula
+        vector PVdenom_; // MIRA A VER: We could have used the coefficients in G(z) as well
+        vector PVnum_;
+        vector COinbuffer_; // signal buffers for real-time filtering
+        vector COoutbuffer_;
+        vector PVinbuffer_;
+        vector PVoutbuffer_;
+        //RECUERDA HACER EL WARPING
+        //functionObject::lforceCoeffs testForces;
+    
+        
 public:
 
     //- Runtime type information
@@ -195,6 +229,11 @@ public:
 
 
         // Evaluation functions
+        void rawCO(const scalar dt, const scalar PVsignal);
+
+        //void filterCO(const scalar dt);
+
+        void saturator(const scalar dt);
 
             //- Update the coefficients associated with the patch field
             virtual void updateCoeffs();
@@ -204,12 +243,19 @@ public:
             word controlString
             (
                 const dictionary&,
-                label
+                label controlTarget
             );
 
             void rollavg(scalar currentValue, dictionary& dict, const scalar& dt);
 
-            scalar kalman(const scalar unfiltered);
+            scalar digitalFilter(const vector& num,const vector& denom, vector& inbuf, vector& outbuf, const filterType filterName, scalar& dt);
+
+            tf zplane_tf(vector numerator, vector denominator);
+            void selectFilterAndSetup
+            (
+                vector& num, vector& denom, const filterType filterName, 
+                dictionary& filterDict, const dictionary& pdict
+            );
 
         //- Write
         void report(Ostream&) const;

@@ -30,14 +30,23 @@ License
 #include "addToRunTimeSelectionTable.H"
 #include "Time.H"
 #include "polyMesh.H"
-#include "lforces.H"
-#include "lforceCoeffs.H"
-#include "FIFOStack.H" // implementation pending
+#include "FIFOStack.H" 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
+
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+const Enum<PIDangularDisplacementPointPatchVectorField::filterType>
+PIDangularDisplacementPointPatchVectorField::filterTypeNames
+({
+    { filterType::FIRST, "firstOrderSimple" },
+    { filterType::SECOND, "secondOrderSimple" },
+    { filterType::BUTTER, "butterworth"},
+    { filterType::AVERAGE, "average"}
+});
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -56,14 +65,17 @@ PIDangularDisplacementPointPatchVectorField
     omega_(Zero),
     p0_(p.localPoints()),
     angle(this->angle0_),
-    PIDcontrolDict_(this->readControl()),
+    PIDcontrolDict_(this->readControl()), 
     P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
     I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
     D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
+    T_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("T",1e-4)),
+    //PIDfilter_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<bool>("COfilter",false)),
     errorIntegral_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("errorIntegral",0.0)),
     errorDifferential_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("errorDifferential",0.0)),
     error_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("error",0.0)),
     controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("controlDelay",1.0)),
+    //applyFilter_(false),
     controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
     //fc_d("forceCoeffs",db().time(),forcesDict_),
@@ -71,15 +83,18 @@ PIDangularDisplacementPointPatchVectorField
     direction_(forcesDict_.getOrDefault<scalar>("direction",3)),
     mycoefs(6,Zero),
     myForce(Zero),
+    //saturate_(false),
     anglemax_(Foam::constant::mathematical::pi),
     anglemin_(-1*Foam::constant::mathematical::pi),
     omegamax_(this->anglemax_),
     omegamin_(this->anglemin_),
     controlString_(this->controlString(forcesDict_,controlTarget_)),
-    meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
-    averageDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("rollingAverage")),
-    window_(averageDict_.getOrDefault<scalar>("window",0.01)),
-    t0_(Zero)
+    //meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
+    //PVfilterDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("PVfilter")),
+    //filterType_(0),
+    //window_(PVfilterDict_.getOrDefault<scalar>("window",0.01)),
+    t0_(Zero)/*,
+    testForces("forceCoeffs",mesh.time(),forcesDict_,true)*/
 {}
 
 
@@ -100,29 +115,33 @@ PIDangularDisplacementPointPatchVectorField
     p0_(p.localPoints()),
     angle(this->angle0_),
     PIDcontrolDict_(this->readControl()),
-    P_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("P",0.5)),
-    I_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("I",0.5)),
-    D_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("D",1.0)),
-    errorIntegral_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("errorIntegral",0.0)),
-    errorDifferential_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("errorDifferential",0.0)),
-    error_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("error",0.0)),
-    controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault("controlDelay",1.0)),
-    controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<int>("controlTarget",2)),
+    P_(PIDcontrolDict_.subDict("PIDcontroller").get<scalar>("P")),
+    I_(PIDcontrolDict_.subDict("PIDcontroller").get<scalar>("I")),
+    D_(PIDcontrolDict_.subDict("PIDcontroller").get<scalar>("D")),
+    T_(PIDcontrolDict_.subDict("PIDcontroller").get<scalar>("T")),
+    //PIDfilter_(PIDcontrolDict_.subDict("PIDcontroller").getOrDefault<bool>("COfilter",false)),
+    errorIntegral_(PIDcontrolDict_.subDict("PIDcontroller").get<scalar>("errorIntegral")),
+    errorDifferential_(PIDcontrolDict_.subDict("PIDcontroller").get<scalar>("errorDifferential")),
+    error_(PIDcontrolDict_.subDict("PIDcontroller").get<scalar>("error")),
+    controlDelay_(PIDcontrolDict_.subDict("PIDcontroller").get<scalar>("controlDelay")),
+    //applyFilter_(false),
+    controlTarget_(PIDcontrolDict_.subDict("PIDcontroller").get<int>("controlTarget")), //DO IT WITH ENUM?
     forcesDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("controlledVarData")),
     //fc_d("forceCoeffs",db().time(),forcesDict_),
-    setPoint_(forcesDict_.getOrDefault<scalar>("setPoint",0.35)),
-    direction_(forcesDict_.getOrDefault<label>("direction",3)),
+    setPoint_(forcesDict_.get<scalar>("setPoint")),
+    direction_(forcesDict_.get<label>("direction")),
     mycoefs(6,Zero),
     myForce(Zero),
+    //saturate_(false),
     anglemax_(Foam::constant::mathematical::pi),
     anglemin_(-1*Foam::constant::mathematical::pi),
     omegamax_(this->anglemax_),
     omegamin_(this->anglemin_),
     controlString_(this->controlString(forcesDict_,controlTarget_)),
-    meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
-    averageDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("rollingAverage")),
-    window_(averageDict_.getOrDefault<scalar>("window",0.01)),
-    t0_(dict.getOrDefault<scalar>("t0",0.0))
+    meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),//REMOVE.CONFLICTS WITH PV_
+    //PVfilterDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("PVfilter")), //REMOVE AND DO IN INITALISATION
+    t0_(dict.getOrDefault<scalar>("t0",0.0))/*,
+    testForces("forceCoeffs",mesh.time(),forcesDict_,true)*/
 {
     if (!dict.found("value"))
     {
@@ -141,7 +160,7 @@ PIDangularDisplacementPointPatchVectorField
     }
     */
     p0_ = p.localPoints();
-    Info<<"P: "<<P_<<endl;
+    Info<<"P: "<<P_<<endl; // PONLO TODO EN UNA LINEA
     Info<<"I: "<<I_<<endl;
     Info<<"D: "<<D_<<endl;
     Info<<"setPoint: "<<setPoint_<<endl;
@@ -149,28 +168,103 @@ PIDangularDisplacementPointPatchVectorField
     Info<<"Full PIDcontrolDict file:"<<endl;
     Info<<"---------------------------------------------"<<endl;
     Info<<PIDcontrolDict_<<endl;
+
+    // Actuator model setup. Saturation + roll-off
     if (PIDcontrolDict_.subDict("PIDcontroller").isDict("actuatorModelCoeffs"))
     {
-        //Info<< "GOT HERE"<<endl;
-        dictionary actuatorModel(PIDcontrolDict_.subDict("PIDcontroller").subDict("actuatorModelCoeffs"));
+        actuatorModel = PIDcontrolDict_.subDict("PIDcontroller").subDict("actuatorModelCoeffs");
+        saturate_ = actuatorModel.getOrDefault<bool>("saturate",false);
+        
+        if(saturate_)
+        {
         anglemax_ = actuatorModel.getOrDefault<scalar>("angleMax",anglemax_);
         anglemin_ = actuatorModel.getOrDefault<scalar>("angleMin",anglemin_);
         omegamax_ = actuatorModel.getOrDefault<scalar>("omegaMax",omegamax_);
         omegamin_ = actuatorModel.getOrDefault<scalar>("omegaMin",omegamin_);
+        }
+        else {Warning<<" NO SATURATION APPLIED TO CONTROL SIGNAL"<<endl;}
+
+        COrolloff_ = actuatorModel.getOrDefault<bool>("rolloff",false);
+        if (COrolloff_){
+            // Both instructions should raise fatal error if keywords not correctly specified
+            COrolloffType_ = filterTypeNames.get("rolloffType",actuatorModel);
+            // FALTA UN IF POR SI ALGÚN LOCO PONE AQUÍ UN BUTTERWORTH
+            int n = static_cast<int>(COrolloffType_);
+            Info<<"Control Signal roll-off. Filter Type: "<<n<<endl;
+            selectFilterAndSetup(COnum_,COdenom_,COrolloffType_,actuatorModel, dict);
+            // PENDING TO CALL FILTER SETUP
+        }
+        else {Info<<"No roll-off applied to Control Signal"<<endl;}
     }
-    
-    if (dict.found("windowValues")) // aquí puedes usar el dict tal como escribe el report!!!
+    else {Warning<<" NO ACTUATOR MODEL OR ROLL-OFF FILTER SPECIFIED. RISK OF HIGH MESH DEFORMATION OR dt->0 to control MeshCo if pimpleDyMStopFoam is used"<<endl;}
+
+    // Feedback filtering setup
+    if (PIDcontrolDict_.subDict("PIDcontroller").isDict("PVfilter"))
     {
-        scalarList catchWindowValues(dict.get<scalarList>("windowValues"));
-        averageDict_.set("windowValues",catchWindowValues);
-        Info<<"READ WINDOWVALUES"<<endl;
+        PVfilterDict_ = PIDcontrolDict_.subDict("PIDcontroller").subDict("PVfilter");
+        applyFilter_ = PVfilterDict_.getOrDefault<bool>("applyFilter",false);
+        if(applyFilter_)
+        {
+            PVfilterType_ = filterTypeNames.get("type",PVfilterDict_);
+
+            int n = static_cast<int>(PVfilterType_);
+            Info<<"Feedback Signal filtering. Filter Type: "<<n<<endl;
+
+            selectFilterAndSetup(PVnum_, PVdenom_, PVfilterType_, PVfilterDict_, dict);
+
+            /*
+            switch(PVfilterType_){
+                case filterType::BUTTER :
+                    wc_ = PVfilterDict_.get<scalar>("wc");
+                    wc_ = 2/T_*tan(wc_*T_/2); // pre-warping. wc_ ~ wc_warped if |wc_|<<pi/T
+                    PVnum_ = {0,0,wc_*wc_};
+                    PVdenom_ = {1,wc_*sqrt(2.0),wc_*wc_};
+                    PVtf = zplane_tf(PVnum_,PVdenom_);
+                    PVnum_ = PVtf.numerator;
+                    PVdenom_ = PVtf.denominator;
+                    break;
+                case filterType::FIRST :
+                    scalar TfPV = PVfilterDict_.get<scalar>("Tf");
+                    PVnum_ = {0,0,1};
+                    PVdenom_ = {0,Tf_,1};
+                    PVtf = zplane_tf(PVnum_,PVdenom_);
+                    PVnum_ = PVtf.numerator;
+                    PVdenom_ = PVtf.denominator;
+                    break;
+                case filterType::SECOND :
+                    scalar TfPV = PVfilterDict_.get<scalar>("Tf");
+                    PVnum_ = {0,0,1};
+                    PVdenom_ = {TfPV*TfPV,2*TfPV,1};
+                    PVtf = zplane_tf(PVnum_,PVdenom_);
+                    PVnum_ = PVtf.numerator;
+                    PVdenom_ = PVtf.denominator;
+                    break;
+                case filterType::AVERAGE :
+                    window_ = PVfilterDict_.get<scalar>("window");
+                    PV_ = forcesDict_.getOrDefault<scalar>("initialValue",0.0);
+                    if (dict.found("windowValues")) // aquí puedes usar el dict tal como escribe la funcion report!!!
+                    {
+                        scalarList catchWindowValues(dict.get<scalarList>("windowValues"));
+                        PVfilterDict_.set("windowValues",catchWindowValues);
+                        Info<<"READ WINDOWVALUES"<<endl;
+                    }
+                    if (dict.found("windowTimes"))
+                    {
+                        scalarList catchWindowTimes(dict.get<scalarList>("windowTimes"));
+                        PVfilterDict_.set("windowValues",catchWindowTimes);
+                        Info<<"READ WINDOWTIMES"<<endl;
+                    }
+                    break;
+                default :
+                    Info<<"Unknown Filter Type"<<exit(FatalError);
+                    break;                   
+            }
+            */
+        }
+        else {Warning<<"NO FILTER APPLIED TO PROCESS VARIABLE SIGNAL. RISK OF NOISY FEEDBACK"<<endl;}
     }
-    if (dict.found("windowTimes"))
-    {
-        scalarList catchWindowTimes(dict.get<scalarList>("windowTimes"));
-        averageDict_.set("windowValues",catchWindowTimes);
-        Info<<"READ WINDOWTIMES"<<endl;
-    }
+    else {Warning<<"NO PROCESS VARIABLE FILTER DICTIONARY AVAILABLE. RISK OF NOISY FEEDBACK"<<endl;}
+    Info<<exit(FatalError);
 }
 
 
@@ -195,10 +289,13 @@ PIDangularDisplacementPointPatchVectorField
     P_(ptf.P_),
     I_(ptf.I_),
     D_(ptf.D_),
+    T_(ptf.T_),
+    //PIDfilter_(ptf.PIDfilter_),
     errorIntegral_(ptf.errorIntegral_),
     errorDifferential_(ptf.errorDifferential_),
     error_(ptf.error_),
     controlDelay_(ptf.controlDelay_),
+    applyFilter_(ptf.applyFilter_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
     //fc_d(ptf.fc_d),
@@ -206,15 +303,18 @@ PIDangularDisplacementPointPatchVectorField
     direction_(ptf.direction_),
     mycoefs(6,Zero),
     myForce(Zero),
+    saturate_(ptf.saturate_),
     anglemax_(ptf.anglemax_),
     anglemin_(ptf.anglemin_),
     omegamax_(ptf.omegamax_),
     omegamin_(ptf.omegamin_),
     controlString_(ptf.controlString_),
-    meanValue_(ptf.meanValue_),
-    averageDict_(ptf.averageDict_),
-    window_(ptf.window_),
-    t0_(ptf.t0_)
+    //meanValue_(ptf.meanValue_),
+    //PVfilterDict_(ptf.PVfilterDict_),
+    //filterType_(ptf.filterType_),
+    //window_(ptf.window_),
+    t0_(ptf.t0_)/*,
+    testForces("forceCoeffs",mesh.time(),forcesDict_,true)*/
 {}
 
 
@@ -237,10 +337,13 @@ PIDangularDisplacementPointPatchVectorField
     P_(ptf.P_),
     I_(ptf.I_),
     D_(ptf.D_),
+    T_(ptf.T_),
+    //PIDfilter_(ptf.PIDfilter_),
     errorIntegral_(ptf.errorIntegral_),
     errorDifferential_(ptf.errorDifferential_),
     error_(ptf.error_),
     controlDelay_(ptf.controlDelay_),
+    applyFilter_(ptf.applyFilter_),
     controlTarget_(ptf.controlTarget_),
     forcesDict_(ptf.forcesDict_),
     //fc_d(ptf.fc_d),
@@ -248,15 +351,18 @@ PIDangularDisplacementPointPatchVectorField
     direction_(ptf.direction_),
     mycoefs(6,Zero),
     myForce(Zero),
+    saturate_(ptf.saturate_),
     anglemax_(ptf.anglemax_),
     anglemin_(ptf.anglemin_),
     omegamax_(ptf.omegamax_),
     omegamin_(ptf.omegamin_),
     controlString_(ptf.controlString_),
-    meanValue_(ptf.meanValue_),
-    averageDict_(ptf.averageDict_),
-    window_(ptf.window_),
-    t0_(ptf.t0_)
+    //meanValue_(ptf.meanValue_),
+    //PVfilterDict_(ptf.PVfilterDict_),
+    //filterType_(ptf.filterType_),
+    //window_(ptf.window_),
+    t0_(ptf.t0_)/*,
+    testForces("forceCoeffs",mesh.time(),forcesDict_,true)*/
 {}
 
 
@@ -304,7 +410,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         {
             timeIndex_=t.timeIndex();
         }
-        angle = angle0_ + omega_*t.value();
+        angle = angle0_ + omega_*t.value(); // you should change it back to oscillatory
         scalar passedAngle = angle - angle0_;
         vector axisHat = axis_/mag(axis_);
         vectorField p0Rel(p0_ - origin_);
@@ -344,19 +450,26 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             fc.calcForcesMoment();
             //fc_d.calcForcesMoment();
             myForce = fc.forceEff(); // forceEff from lforces Class RETURNS ROTATED FORCE
-            rollavg(myForce[direction_],averageDict_,dt); // rolling Average with FIFOStack class
-            // FIFO needs to be replaced with Kalman
-            Info<<"meanValue out from function is: "<<meanValue_<<endl;
-            error_ = setPoint_ - meanValue_; // this should choose x,y,z according to direction
+            PV_=myForce[direction_];
+            //rollavg(myForce[direction_],PVfilterDict_,dt); // rolling Average with FIFOStack class
+            // FIFO needs to be replaced with feedbackFilter
+            if(applyFilter_){
+                PV_ = digitalFilter(PVnum_, PVdenom_,PVinbuffer_,PVoutbuffer_,PVfilterType_,dt);
+                Info<<"Unfiltered PV from function is: "<<myForce[direction_]<<" ("<<controlString_<<")"<<endl;
+                Info<<"Filtered PV from function is: "<<PV_<<" ("<<controlString_<<")"<<endl;
+            }
+            //Calculate unfiltered Control Output
+            rawCO(dt,PV_);
+            /*
+            error_ = setPoint_ - filtPV_; // this should choose x,y,z according to direction
 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
             errorDifferential_ = (error_ - oldError_)/dt;
             //const scalar errorDifferential = oldError_ - error_;
             angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
             omega_ = (angle - oldangle_)/dt;
-
-            Info<< "Controlled variable"<<controlString_<<" : "<< myForce[2]<<endl;
-            //Info<< "target force is: "<< setPoint_ <<endl;
+            */
+            Info<< "Controlled variable"<<controlString_<<" : "<< myForce[direction_]<<endl;
 
         break;
 
@@ -364,31 +477,39 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
             fc.calcrot();
             mycoefs = fc.coefList;
+            PV_=mycoefs[direction_];
             //Info<<"Cd"<< mycoefs[0]<<endl;
             //Info<<"Cs"<< mycoefs[1]<<endl;
-            rollavg(mycoefs[direction_], averageDict_,dt);
-            Info<<"Controlled Variable "<<controlString_<<": "<< meanValue_<<endl;
+            //rollavg(mycoefs[direction_], PVfilterDict_,dt);
+            if (applyFilter_) {
+                PV_ = digitalFilter(PVnum_, PVdenom_,PVinbuffer_,PVoutbuffer_,PVfilterType_,dt);
+                Info<<"Unfiltered PV from function is: "<<mycoefs[direction_]<<" ("<<controlString_<<")"<<endl;
+                Info<<"Filtered PV from function is: "<<PV_<<" ("<<controlString_<<")"<<endl;
+            }
             //Info<<"CmRoll"<< mycoefs[3]<<endl;
             //Info<<"CmPitch"<< mycoefs[4]<<endl;
             //Info<<"CmYaw"<< mycoefs[5]<<endl;
-
-            error_ = setPoint_ - meanValue_; 
+            rawCO(dt,PV_);
+            /*error_ = setPoint_ - filtPV_; 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
             errorDifferential_ = (error_ - oldError_)/dt;
             angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
-            omega_ = (angle - oldangle_)/dt; 
+            omega_ = (angle - oldangle_)/dt;
+            */
 
             break;
 
         case 2:
 
+            rawCO(dt,angle);
+            /*
             error_ = setPoint_ - angle;
 
             errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
             errorDifferential_ = (error_ - oldError_)/dt;
             angle = P_*error_ + errorIntegral_ + D_*errorDifferential_ ;
             omega_ = (angle - oldangle_)/dt;
-
+            */
             break;
 
         default:
@@ -398,19 +519,63 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
             <<endl<<exit(FatalError);
 
         break;
-
-        // EXTERNAL CONTROL WILL BE DONE IN ANOTHER pointPatchFields option
     }
+
+    //Apply 1st order filtering to Control Output
 
     rawomega_ = omega_;
     rawangle_ = angle;
 
-    // SATURATOR. LIMITS MAXIMUM ANGLE & OMEGA
+    if(COrolloff_) {
+        digitalFilter(COnum_, COdenom_, COinbuffer_,COoutbuffer_,COrolloffType_,dt); // Idealmente tendrá que ser llamada a función genérica de filtro
+    }
 
-    // 1. Check omega limits and modify itself and angle accordingly
-    // REQUIRES CORRECT OMEGA CALCULATION IN ABOVE CODE LINES!!
-    // you could declare a state vector that contains angle and omega so that a function can be called
-    // you should learn how to use the tensor and rotation classes to keep track of these things??
+    if(saturate_) {
+        saturator(dt);
+    }
+
+    vector axisHat = axis_/mag(axis_);
+    vectorField p0Rel(p0_ - origin_);
+    // report calculated angles
+    report(Info);
+    scalar passedAngle = angle - angle0_;
+    vectorField::operator=
+    (
+        p0Rel*(cos(passedAngle) - 1)
+      + (axisHat ^ p0Rel*sin(passedAngle))
+      + (axisHat & p0Rel)*(1 - cos(passedAngle))*axisHat
+    );
+
+    fixedValuePointPatchField<vector>::updateCoeffs();
+    //Info<< "db access"<< db().names() << endl;
+
+}
+
+
+void PIDangularDisplacementPointPatchVectorField::rawCO(const scalar dt, const scalar PVsignal)
+{
+
+    error_ = setPoint_ - PVsignal;
+    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
+    errorDifferential_ = (error_ - oldError_)/dt;
+    angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
+    omega_ = (angle - oldangle_)/dt;
+    //Info<<"rawCO called, Output: "<<angle<<" raw omega: "<<omega_<<endl;
+}
+
+/*void PIDangularDisplacementPointPatchVectorField::filterCO(const scalar dt)
+{
+    //1st Order Filter to smooth Control Output signal
+    // Tf*dCO/dt + CO_filtered = rawCO
+    // Tf is time to 63% of step increase in Control Output (deflection angle)(CO = 0.63*unfilteredCO)
+    // This is similar to adding a first order actuator model that receives the raw PID signal
+
+    angle = oldangle_ + dt/Tf_*(rawangle_ - oldangle_);
+}
+*/
+void PIDangularDisplacementPointPatchVectorField::saturator(const scalar dt)
+{
+        // SATURATOR. LIMITS MAXIMUM ANGLE & OMEGA
 
     if (pos(omega_) && omega_>omegamax_)
     {
@@ -445,28 +610,7 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         angle = anglemin_;
         //Info<<" (rad/s). Corrected mesh omega is "<<omega_<<"(rad/s)"<<endl;
     }
-    //scalar signo(sign(-error_));
-    //Info<< "signo es: "<<signo<<endl;
-    // MOVEMENT BASED ON CALCULATED OMEGA
-    //angle = angle0_ + angle ;//+ omega_*dt;
-    //auxangle_ = angle0_ + omega_*t.value();  //amplitude_*sin(omega_*t.value());
-    vector axisHat = axis_/mag(axis_);
-    vectorField p0Rel(p0_ - origin_);
-    // report calculated angles
-    report(Info);
-    scalar passedAngle = angle - angle0_;
-    vectorField::operator=
-    (
-        p0Rel*(cos(passedAngle) - 1)
-      + (axisHat ^ p0Rel*sin(passedAngle))
-      + (axisHat & p0Rel)*(1 - cos(passedAngle))*axisHat
-    );
-
-    fixedValuePointPatchField<vector>::updateCoeffs();
-    //Info<< "db access"<< db().names() << endl;
-
 }
-
 
 void PIDangularDisplacementPointPatchVectorField::write
 (
@@ -486,13 +630,13 @@ void PIDangularDisplacementPointPatchVectorField::write
     os.writeEntry("P",P_);
     os.writeEntry("I",I_);
     os.writeEntry("D",D_);
-    if (averageDict_.found("windowValues"))
+    if (PVfilterDict_.found("windowValues")) // OJO AQUÍ QUE PVfilterDict no tiene por qué ser
     {
-        os.writeEntry("windowValues",averageDict_.get<scalarList>("windowValues"));
+        os.writeEntry("windowValues",PVfilterDict_.get<scalarList>("windowValues"));
     }
-    if (averageDict_.found("windowTimes"))
+    if (PVfilterDict_.found("windowTimes"))
     {
-        os.writeEntry("windowTimes",averageDict_.get<scalarList>("windowTimes"));
+        os.writeEntry("windowTimes",PVfilterDict_.get<scalarList>("windowTimes"));
     }
     writeEntry("value", os);
 }
@@ -511,38 +655,30 @@ IOdictionary PIDangularDisplacementPointPatchVectorField::readControl()
         )
     );
     
-    Info<< "READCONTROLS FUNCTION PIDCONTROLDICT:"<< endl<< readdict.dictName() << endl;
+    Info<< "Read controller setup from PIDcontrolDict:"<< endl<< readdict.dictName() << endl;
     return readdict;
 }
 
 // Determine control variable string to output during execution
 word PIDangularDisplacementPointPatchVectorField::controlString(const dictionary& dict,label controlTarget)
 {
-        wordList forceStrings(6);
-        wordList forceCoeffStrings(6);
-        forceStrings[0] = "Drag Force";
-        forceStrings[1] = "Side Force";
-        forceStrings[2] = "Lift Force";
-        forceStrings[3] = "Roll Moment";
-        forceStrings[4] = "Pitch Moment";
-        forceStrings[5] = "Yaw Moment";
-        forceCoeffStrings[0] = "Cd";
-        forceCoeffStrings[1] = "Cs";
-        forceCoeffStrings[2] = "Cl";
-        forceCoeffStrings[3] = "Cr";
-        forceCoeffStrings[4] = "Cp";
-        forceCoeffStrings[5] = "Cy";
+        wordList forceStrings = {"Drag Force","Side Force", "Lift Force", "Roll Moment", "Pitch Moment", "Yaw Moment"};
+        wordList forceCoeffStrings = {"Cd", "Cs", "Cl", "Cr", "Cp", "Cy"};
+        
+        //Info<<forceStrings<<endl;
+        //Info<<forceCoeffStrings<<endl;
+        
         word controlString = "Cl";
 
-        label direction = dict.getOrDefault<int>("direction",2);
+        label direc = dict.get<int>("direction");
 
         if (controlTarget == 0)
         {
-            controlString = forceStrings[direction];
+            controlString = forceStrings[direc];
         }
         else if (controlTarget == 1)
         {
-            controlString = forceCoeffStrings[direction];
+            controlString = forceCoeffStrings[direc];
         }
         else
         {
@@ -620,25 +756,183 @@ void PIDangularDisplacementPointPatchVectorField::rollavg
     dict.set("windowTimes",windowTimes);
     dict.set("windowValues",windowValues);
 
-    meanValue_ = meanValue;
+    PV_ = meanValue;
     scalar delta = meanValue - currentValue;
     
-    Info<<"meanValue is: "<<meanValue_<<"  Delta is: "<<delta<<endl;
+    Info<<"meanValue is: "<<PV_<<"  Delta is: "<<delta<<endl;
     /*
     Info<<"FIFO Window Times "<<windowTimes<<endl;
     Info<<"FIFO Window Values"<<windowValues<<endl;
     */
-
 }
 
-scalar PIDangularDisplacementPointPatchVectorField::kalman
+scalar PIDangularDisplacementPointPatchVectorField::digitalFilter
 (
-    const scalar unfiltered
+    const vector& num, const vector& denom, vector& inbuf, vector& outbuf, const filterType filterName, scalar& dt //revisa q los const valgan de algo así en el libro
 )
 {
+    // PUEDO MONTAR DOS BUFFERS E IRLOS ACTUALIZANDO EN CADA ITERACIÓN
+    // DE ESA FORMA SOLO ME HACE FALTA ESTA FUNCIÓN PARA LAS FÓRMULAS EN DIFERENCIAS
+    // inbuf[0]=x(k), inbuf[1] = x(k-1), inbuf[2] = x(k-2)
+    // outbuf[0]=y(k), outbuf[1] = y(k-1), outbuf[2] = y(k-2)
 
-    return unfiltered; // PENDING
+    inbuf[2]=inbuf[1];inbuf[1]=inbuf[0];inbuf[0]=PV_;
+
+    switch (filterName)
+    {
+    case filterType::BUTTER :
+        PV_ = num[0]*inbuf[2] + num[1]*inbuf[1] + num[2]*inbuf[0] 
+        - denom[0]*outbuf[2] - denom[1]*outbuf[1] - denom[2]*outbuf[0];
+        break;
+    case filterType::FIRST :
+        PV_ = num[0]*inbuf[1] + num[1]*inbuf[0] - denom[0]*outbuf[1] - denom[1]*outbuf[0];
+        break;
+    case filterType::SECOND :
+        PV_ = num[0]*inbuf[2] + num[1]*inbuf[1] + num[2]*inbuf[0] 
+        - denom[0]*outbuf[2] - denom[1]*outbuf[1] - denom[2]*outbuf[0];
+        break;
+    case filterType::AVERAGE :
+        rollavg(PV_,PVfilterDict_,dt);
+        break;
+    default:
+        Info<<"Unknown filter type"<<exit(FatalError)<<endl;
+        break;
+    }
+    outbuf[2]=outbuf[1];outbuf[1]=outbuf[0];outbuf[0]=PV_;
+    // slip
+    return PV_;
 }
+
+PIDangularDisplacementPointPatchVectorField::tf PIDangularDisplacementPointPatchVectorField::zplane_tf
+(
+    vector numerator, vector denominator // debería pasarlas por referencia y olvidarme del
+)
+{
+    // Num and denom are passed as continuous transfer function coefs bn,an
+    tf digital_tf;
+    // prewarping should be done before this function directly to wc
+    scalar K = 2/T_;
+    scalar Ksq = K*K;
+    
+    
+    float bz0, bz1, bz2, az0, az1, az2;
+    if ((denominator[2] == 0) && (numerator[2] == 0)){
+        Info<<"First order Filter"<<endl;
+        //         b0*s + b1
+        // G(s) = -----------
+        //         a0*s + a1
+
+        //         bz0*z^-1 + bz1
+        // G(z) = ---------------------------
+        //         az0*z^-1 + az1
+        // denom = a0*K + a1
+        // bz0 = (-b0*K + b1) / denom
+        // bz1 = (b0*K + b1) / denom
+        // az0 = (-a0*K + a1) / denom
+        // az1 = 1
+        scalar denom = denominator[0]*K + denominator[1];
+        bz2 = 0; az2 = 0;
+        bz0 = (-numerator[0]*K + numerator[1]) / denom;
+        bz1 = (numerator[0]*K + numerator[1]) / denom;
+        az0 = (-denominator[0]*K + denominator[1]) / denom;
+        az1 = 1.0;
+        digital_tf.numerator = {az0,az1,az2};
+        digital_tf.denominator = {bz0,bz1,bz2};
+
+    }
+    else {
+        //         b0*s^2 + b1*s + b2
+        // G(s) = -------------------
+        //         a0*s^2 + a1*s + a2
+
+        //         bz0*z^-2 + bz1*z^-1 + bz2
+        // G(z) = ---------------------------
+        //         az0*z^-2 + az1*z^-1 + az2
+
+        // denom = a2/K^2 + a1/K + a0
+        // bz0 = (b2/K^2 - b1/K + b0) / denom
+        // bz1 = (2*b2/K^2 - 2*b0) /denom
+        // bz2 = (b2/K^2 + b1/K + b0) /denom
+        // same for a_n coefs
+        // **az2 is 1 because G(z) is normalised by az2 for convenience in the difference equation (therefore the division by denom)
+
+        scalar denom = denominator[2]/Ksq + denominator[1]/K + denominator[0];
+        bz0 = (numerator[2]/Ksq - numerator[1]/K + numerator[0]) / denom;
+        bz1 = (2*numerator[2]/Ksq - 2*numerator[0]) / denom;
+        bz2 = (numerator[2]/Ksq + numerator[1]/K + numerator[0]) / denom;
+        az0 = (denominator[2]/Ksq - denominator[1]/K + denominator[0]) / denom;
+        az1 = (2*denominator[2]/Ksq - 2*denominator[0]) / denom;
+        az2 = 1.0;
+
+        digital_tf.numerator = {bz0,bz1,bz2};
+        digital_tf.denominator = {az0,az1,az2};
+
+    }
+    
+    Info<<"Transfer function G(s)="<<numerator<<" / "<<denominator<<endl;
+    Info<<"Transfer function G(z)="<<digital_tf.numerator<<" / "<<digital_tf.denominator<<endl;
+    
+    return digital_tf;
+}
+
+void PIDangularDisplacementPointPatchVectorField::selectFilterAndSetup
+(
+    vector& tfnum, vector& tfdenom, const filterType filterName, 
+    dictionary& filterDict, const dictionary& pdict
+)
+{
+    tf tftf;
+    scalar wc;
+    scalar Tf;
+    switch(filterName){
+        case filterType::BUTTER :
+            wc = filterDict.get<scalar>("wc");
+            wc = 2/T_*tan(wc*T_/2); // pre-warping. wc ~ wcwarped if |wc|<<pi/T
+            tfnum = {0,0,wc*wc};
+            tfdenom = {1,wc*sqrt(2.0),wc*wc};
+            tftf = zplane_tf(tfnum,tfdenom);
+            tfnum = tftf.numerator;
+            tfdenom = tftf.denominator;
+            break;
+        case filterType::FIRST :
+            Tf = filterDict.get<scalar>("Tf");
+            tfnum = {0,1,0};
+            tfdenom = {Tf,1,0};
+            tftf = zplane_tf(tfnum,tfdenom);
+            tfnum = tftf.numerator;
+            tfdenom = tftf.denominator;
+            break;
+        case filterType::SECOND :
+            Tf = filterDict.get<scalar>("Tf");
+            tfnum = {0,0,1};
+            tfdenom = {Tf*Tf,2*Tf,1};
+            tftf = zplane_tf(tfnum,tfdenom);
+            tfnum = tftf.numerator;
+            tfdenom = tftf.denominator;
+            break;
+        case filterType::AVERAGE :
+            window_ = filterDict.get<scalar>("window");
+            PV_ = forcesDict_.getOrDefault<scalar>("initialValue",0.0);
+            if (pdict.found("windowValues")) // aquí puedes usar el dict tal como escribe la funcion report!!!
+            {
+                scalarList catchWindowValues(pdict.get<scalarList>("windowValues"));
+                filterDict.set("windowValues",catchWindowValues);
+                Info<<"READ WINDOWVALUES"<<endl;
+            }
+            if (pdict.found("windowTimes"))
+            {
+                scalarList catchWindowTimes(pdict.get<scalarList>("windowTimes"));
+                filterDict.set("windowValues",catchWindowTimes);
+                Info<<"READ WINDOWTIMES"<<endl;
+            }
+            break;
+        default :
+            Info<<"Unknown Filter Type"<<exit(FatalError);
+            break;                   
+    }
+    return;
+}
+
 void PIDangularDisplacementPointPatchVectorField::report
 (
     Ostream& os

@@ -13,3 +13,4 @@ doc/
 *.zip
 wingMotion
 snappymeshing
+*.code-workspace

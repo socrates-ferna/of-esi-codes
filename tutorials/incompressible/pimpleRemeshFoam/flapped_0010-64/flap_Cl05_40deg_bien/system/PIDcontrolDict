@@ -17,19 +17,33 @@ FoamFile
 
 PIDcontroller
 {
-    type            PID;
     P               -0.6067;
     I               -9.921;
     D               3.036e-5;
-    controlDelay    1;
-    actuatorModel   linear;
+
+    // Only required if resuming simulation after remeshing
+    errorIntegral   0.0;
+    errorDifferential 0.0;
+    error 0.0;
+    //
+
+
+    controlDelay    0;
+    T           1e-4; // Sampling period (should be T=dt in our sim)
     actuatorModelCoeffs
     {
-        angleMax        0.349066;
+        // Time in s
+        // always rad or rad/s even for filter cutoff frequencies
+        rolloff yes; // yes/no equivalent to true/false
+        rolloffType firstOrderSimple; // secondOrderSimple butterworthSecond
+        Tf      0.01; //Typically Td/10 from PID tuning
+        saturate yes;
+        angleMax        0.349066; //always in rad
         angleMin        -0.349066;
         omegaMax        0.7; // 40 deg/s
         omegaMin        -0.7;
     }
+
     controlTarget   1;
     controlledVarData
     {
@@ -49,14 +63,17 @@ PIDcontroller
         setPoint        0.5;
         initialValue    0;
     }
-    rollingAverage
+
+    PVfilter //Process Variable Filter (Noise Filter)
     {
-        type            average;
-        functionObject  forceCoeffs;
-        fields          ( Cl Cd );
-        tolerance       0.001;
+        applyFilter yes;
+        type           butterworth;
+        wc          6000; //always rad/s
+        //functionObject  forceCoeffs;
+        //fields          ( Cl Cd );
+        //tolerance       0.001;
         window          0.05;
-        windowType      exact;
+        //windowType      exact;
     }
 }
 

@@ -23,13 +23,13 @@ startTime         0;
 
 stopAt            endTime;
 
-endTime           16;
+endTime           1e-5;
 
-deltaT            1e-4;
+deltaT            5e-6;
 
 maxDeltaT         0.01;
 
-adjustTimeStep    yes;
+adjustTimeStep    no;
 
 maxCo             1.0;
 
