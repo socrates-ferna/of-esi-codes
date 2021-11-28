@@ -264,7 +264,7 @@ PIDangularDisplacementPointPatchVectorField
         else {Warning<<"NO FILTER APPLIED TO PROCESS VARIABLE SIGNAL. RISK OF NOISY FEEDBACK"<<endl;}
     }
     else {Warning<<"NO PROCESS VARIABLE FILTER DICTIONARY AVAILABLE. RISK OF NOISY FEEDBACK"<<endl;}
-    Info<<exit(FatalError);
+    //Info<<exit(FatalError);
 }
 
 
