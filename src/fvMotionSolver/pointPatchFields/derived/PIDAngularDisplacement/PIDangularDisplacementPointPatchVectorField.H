@@ -174,6 +174,13 @@ public:
             const pointPatchFieldMapper&
         );
 
+        // Test Constructor (for Digital filter test, but customisable for testing other functionalities)
+        // Requires a fully defined dynamic mesh case aimed to use this class
+        //PIDangularDisplacementPointPatchVectorField(const dictionary&);
+        /*PIDangularDisplacementPointPatchVectorField(PIDangularDisplacementPointPatchVectorField& PID):this->clone()
+        {
+            Info<<"Copy constructor called"<<endl;
+        }*/
         //- Construct and return a clone
         virtual autoPtr<pointPatchField<vector>> clone() const
         {
@@ -248,7 +255,7 @@ public:
 
             void rollavg(scalar currentValue, dictionary& dict, const scalar& dt);
 
-            scalar digitalFilter(const vector& num,const vector& denom, vector& inbuf, vector& outbuf, const filterType filterName, scalar& dt);
+            scalar digitalFilter(scalar inSignal, const vector& num,const vector& denom, vector& inbuf, vector& outbuf, const filterType filterName, scalar& dt);
 
             tf zplane_tf(vector numerator, vector denominator);
             void selectFilterAndSetup

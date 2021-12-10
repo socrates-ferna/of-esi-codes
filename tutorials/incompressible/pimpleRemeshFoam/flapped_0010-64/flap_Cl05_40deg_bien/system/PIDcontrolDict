@@ -20,7 +20,7 @@ PIDcontroller
     P               -0.6067;
     I               -9.921;
     D               3.036e-5;
-
+    test yes;
     // Only required if resuming simulation after remeshing
     errorIntegral   0.0;
     errorDifferential 0.0;
@@ -36,7 +36,7 @@ PIDcontroller
         // always rad or rad/s even for filter cutoff frequencies
         rolloff yes; // yes/no equivalent to true/false
         rolloffType firstOrderSimple; // secondOrderSimple butterworthSecond
-        Tf      0.01; //Typically Td/10 from PID tuning
+        Tf      0.1; //Typically Td/10 from PID tuning
         saturate yes;
         angleMax        0.349066; //always in rad
         angleMin        -0.349066;
@@ -68,7 +68,7 @@ PIDcontroller
     {
         applyFilter yes;
         type           butterworth;
-        wc          6000; //always rad/s
+        wc          60; //always rad/s
         //functionObject  forceCoeffs;
         //fields          ( Cl Cd );
         //tolerance       0.001;
