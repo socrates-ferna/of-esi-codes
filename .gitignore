@@ -1,3 +1,4 @@
+
 .vscode/
 *.png
 scripts/
@@ -7,6 +8,7 @@ platforms/*
 *.o*
 **log.*
 pyScripts/log.*
+pyScripts/controlPostProc.ipynb
 **__pycache__
 dconfig
 doc/

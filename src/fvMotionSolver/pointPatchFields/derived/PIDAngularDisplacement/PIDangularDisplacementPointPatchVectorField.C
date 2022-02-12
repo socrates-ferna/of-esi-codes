@@ -254,7 +254,7 @@ PIDangularDisplacementPointPatchVectorField
 
     }
     
-    Info<<exit(FatalError);
+    //Info<<exit(FatalError);
 }
 
 

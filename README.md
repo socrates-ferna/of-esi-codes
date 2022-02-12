@@ -1,5 +1,5 @@
 ## Work in progress
-This repository contains the code in a raw state that allowed me to complete my thesis, but there are plenty of details to correct before I can call it a "release". This README will be updated when it is ready.
+This repository contains the code in a raw state that allowed me to complete my MSc thesis, but there are plenty of details to correct before I can call it a "release". This README will be updated when it is ready.
 
 ## Summary of contents
 
