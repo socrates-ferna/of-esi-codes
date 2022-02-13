@@ -121,7 +121,9 @@ class PIDangularDisplacementPointPatchVectorField
         scalar omegamax_;
         scalar omegamin_;
         word controlString_="(Cl)";
-
+        // anti-windup
+        scalar satDiff_ = 0;
+        //scalar oldSatDiff_ = 0;
         //averaging variables
         scalar meanValue_;
         dictionary PVfilterDict_;

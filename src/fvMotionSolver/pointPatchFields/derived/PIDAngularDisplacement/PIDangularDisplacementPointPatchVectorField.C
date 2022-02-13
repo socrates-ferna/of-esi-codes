@@ -485,16 +485,19 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
         break;
     }
 
-    rawomega_ = omega_;
-    rawangle_ = angle;
-
     if(COrolloff_) {
         angle = digitalFilter(angle,COnum_, COdenom_, COinbuffer_,COoutbuffer_,COrolloffType_,dt);
     }
 
+    omega_ = (angle - oldangle_)/dt;
+    rawomega_ = omega_;
+    rawangle_ = angle;
+
     if(saturate_) {
         saturator(dt);
     }
+    satDiff_ = angle - rawangle_;
+    
 
     vector axisHat = axis_/mag(axis_);
     vectorField p0Rel(p0_ - origin_);
@@ -518,7 +521,8 @@ void PIDangularDisplacementPointPatchVectorField::rawCO(const scalar dt, const s
 {
 
     error_ = setPoint_ - PVsignal;
-    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
+    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt + I_/P_*0.5*satDiff_*dt;
+    Info<<"SatDiff= "<<satDiff_<<" Integral action= "<< I_*0.5*(error_ + oldError_)*dt <<" Antiwindup action= "<< I_/P_*satDiff_*dt<<endl;
     errorDifferential_ = (error_ - oldError_)/dt;
     angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
     omega_ = (angle - oldangle_)/dt;
