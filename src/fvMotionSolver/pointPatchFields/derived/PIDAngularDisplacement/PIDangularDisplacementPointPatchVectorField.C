@@ -237,11 +237,16 @@ PIDangularDisplacementPointPatchVectorField
     //const vector& num, const vector& denom, vector& inbuf, vector& outbuf, const filterType filterName, scalar& dt //revisa q los const valgan de algo así en el libro
             //PVfilter call
             Info<<i<<"        "<<endl;
-            filteredPV = digitalFilter(PV_,PVnum_,PVdenom_,PVinbuffer_,PVoutbuffer_,PVfilterType_,localdt);
-            Info<<"PV:"<<filteredPV<<endl;
+            if (applyFilter_){
+                filteredPV = digitalFilter(PV_,PVnum_,PVdenom_,PVinbuffer_,PVoutbuffer_,PVfilterType_,localdt);
+                Info<<"PV:"<<filteredPV<<endl;
+
+            }
             //COfilter call
-            filteredAngle = digitalFilter(angle,COnum_,COdenom_,COinbuffer_,COoutbuffer_,COrolloffType_,localdt);
-            Info<<"CO:"<<filteredAngle<<endl;
+            if (COrolloff_){
+                filteredAngle = digitalFilter(angle,COnum_,COdenom_,COinbuffer_,COoutbuffer_,COrolloffType_,localdt);
+                Info<<"CO:"<<filteredAngle<<endl;
+            }
             simTime+=localdt;
             i++;
         }
@@ -251,7 +256,7 @@ PIDangularDisplacementPointPatchVectorField
         Info<<"filtered PV: "<<filteredPV<<endl;
         Info<<"filtered angle: "<<filteredAngle<<endl;
         Info<<"Iterations: "<<i<<endl;
-
+        Info<<exit(FatalError);
     }
     
     //Info<<exit(FatalError);
@@ -806,7 +811,7 @@ PIDangularDisplacementPointPatchVectorField::tf PIDangularDisplacementPointPatch
         // bz2 = (b2/K^2 + b1/K + b0) /denom
         // same for a_n coefs
         // **az2 is 1 because G(z) is normalised by az2 for convenience in the difference equation (therefore the division by denom)
-
+        Info<<"Second order Filter"<<endl;
         scalar denom = denominator[2]/Ksq + denominator[1]/K + denominator[0];
         bz0 = (numerator[2]/Ksq - numerator[1]/K + numerator[0]) / denom;
         bz1 = (2*numerator[2]/Ksq - 2*numerator[0]) / denom;
