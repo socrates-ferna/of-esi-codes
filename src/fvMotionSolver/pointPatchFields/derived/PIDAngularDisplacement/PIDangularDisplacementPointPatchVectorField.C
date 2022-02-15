@@ -519,12 +519,16 @@ void PIDangularDisplacementPointPatchVectorField::updateCoeffs()
 
 void PIDangularDisplacementPointPatchVectorField::rawCO(const scalar dt, const scalar PVsignal)
 {
-
+    scalar olderror = error_;
     error_ = setPoint_ - PVsignal;
-    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt + I_/P_*0.5*satDiff_*dt;
+    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt + I_/P_*satDiff_*dt;
     Info<<"SatDiff= "<<satDiff_<<" Integral action= "<< I_*0.5*(error_ + oldError_)*dt <<" Antiwindup action= "<< I_/P_*satDiff_*dt<<endl;
     errorDifferential_ = (error_ - oldError_)/dt;
     angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
+    if (neg(olderror*error_)){
+        Info<<"Error changed sign, Integral action reset to 0"<<endl;
+        errorIntegral_ = 0;
+    }
     omega_ = (angle - oldangle_)/dt;
     //Info<<"rawCO called, Output: "<<angle<<" raw omega: "<<omega_<<endl;
 }
