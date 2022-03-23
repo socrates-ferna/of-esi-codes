@@ -123,6 +123,8 @@ class PIDangularDisplacementPointPatchVectorField
         word controlString_="(Cl)";
         // anti-windup
         scalar satDiff_ = 0;
+        bool antiWindup_;
+        bool integralReset_;
         //scalar oldSatDiff_ = 0;
         //averaging variables
         scalar meanValue_;

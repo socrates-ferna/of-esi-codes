@@ -89,6 +89,9 @@ PIDangularDisplacementPointPatchVectorField
     omegamax_(this->anglemax_),
     omegamin_(this->anglemin_),
     controlString_(this->controlString(forcesDict_,controlTarget_)),
+    antiWindup_(PIDcontrolDict_.subDict("PIDcontroller").get<bool>("antiwindup")),
+    integralReset_(PIDcontrolDict_.subDict("PIDcontroller").get<bool>("integralReset")),
+
     //meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
     //PVfilterDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("PVfilter")),
     //filterType_(0),
@@ -138,7 +141,10 @@ PIDangularDisplacementPointPatchVectorField
     omegamax_(this->anglemax_),
     omegamin_(this->anglemin_),
     controlString_(this->controlString(forcesDict_,controlTarget_)),
-    meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),//REMOVE.CONFLICTS WITH PV_
+    meanValue_(forcesDict_.getOrDefault<scalar>("initialValue",0.0)),
+    antiWindup_(PIDcontrolDict_.subDict("PIDcontroller").get<bool>("antiwindup")),
+    integralReset_(PIDcontrolDict_.subDict("PIDcontroller").get<bool>("integralReset")),
+    //REMOVE.CONFLICTS WITH PV_
     //PVfilterDict_(PIDcontrolDict_.subDict("PIDcontroller").subDict("PVfilter")), //REMOVE AND DO IN INITALISATION
     t0_(dict.getOrDefault<scalar>("t0",0.0))/*,
     testForces("forceCoeffs",mesh.time(),forcesDict_,true)*/
@@ -304,6 +310,8 @@ PIDangularDisplacementPointPatchVectorField
     omegamax_(ptf.omegamax_),
     omegamin_(ptf.omegamin_),
     controlString_(ptf.controlString_),
+    antiWindup_(ptf.antiWindup_),
+    integralReset_(ptf.integralReset_),
     //meanValue_(ptf.meanValue_),
     //PVfilterDict_(ptf.PVfilterDict_),
     //filterType_(ptf.filterType_),
@@ -352,6 +360,8 @@ PIDangularDisplacementPointPatchVectorField
     omegamax_(ptf.omegamax_),
     omegamin_(ptf.omegamin_),
     controlString_(ptf.controlString_),
+    antiWindup_(ptf.antiWindup_),
+    integralReset_(ptf.integralReset_),
     //meanValue_(ptf.meanValue_),
     //PVfilterDict_(ptf.PVfilterDict_),
     //filterType_(ptf.filterType_),
@@ -521,13 +531,18 @@ void PIDangularDisplacementPointPatchVectorField::rawCO(const scalar dt, const s
 {
     scalar olderror = error_;
     error_ = setPoint_ - PVsignal;
-    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt + I_/P_*satDiff_*dt;
-    Info<<"SatDiff= "<<satDiff_<<" Integral action= "<< I_*0.5*(error_ + oldError_)*dt <<" Antiwindup action= "<< I_/P_*satDiff_*dt<<endl;
+    errorIntegral_ = oldErrorIntegral_ + I_*0.5*(error_ + oldError_)*dt;
+    if (antiWindup_){
+        errorIntegral_ = errorIntegral_ + I_/P_*satDiff_*dt;
+        Info<<"SatDiff= "<<satDiff_<<" Integral action= "<< I_*0.5*(error_ + oldError_)*dt <<" Antiwindup action= "<< I_/P_*satDiff_*dt<<endl;
+    }
     errorDifferential_ = (error_ - oldError_)/dt;
     angle = P_*error_ + errorIntegral_ + D_*errorDifferential_;
-    if (neg(olderror*error_)){
-        Info<<"Error changed sign, Integral action reset to 0"<<endl;
-        errorIntegral_ = 0;
+    if (integralReset_){
+        if (neg(olderror*error_)){
+            Info<<"Error changed sign, Integral action reset to 0"<<endl;
+            errorIntegral_ = 0;
+        }
     }
     omega_ = (angle - oldangle_)/dt;
     //Info<<"rawCO called, Output: "<<angle<<" raw omega: "<<omega_<<endl;
